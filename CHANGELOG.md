@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/hlysine/reactive/compare/v0.2.0...v0.2.1) (2023-05-21)
+
+
+### Features
+
+* re-export reactive functions from @vue/reactivity ([1b6dc01](https://github.com/hlysine/reactive/commit/1b6dc0194e146e4cb8a339cd3b53bfa1599e9ba1))
+
 ## [0.2.0](https://github.com/hlysine/reactive/compare/v0.1.0...v0.2.0) (2023-05-21)
 
 

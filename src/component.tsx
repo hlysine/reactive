@@ -17,16 +17,19 @@ interface ComponentReactivity {
  * If your functional component makes use of a reactive value, the component has to be wrapped by `makeReactive` so
  * that it can re-render when the reactive value changes.
  *
- * @example <caption>Simple usage of `makeReactive`.</caption>
- * ```ts
+ * @example
+ * Simple usage of `makeReactive`.
+ * ```tsx
  * export default makeReactive(function App() {
  *   const state = useReactive({ count: 1 });
  *   return <p>{state.count}</p>;
  * });
  * ```
  *
- * @example <caption>Once a component is made reactive, it may access reactive values from any sources, not just from props, contexts and hooks.</caption>
- * ```ts
+ * @example
+ * Once a component is made reactive, it may access reactive values from any sources, not just from props, contexts
+ * and hooks.
+ * ```tsx
  * import { reactiveState } from './anotherFile';
  *
  * export default makeReactive(function App() {

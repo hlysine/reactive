@@ -14,7 +14,7 @@ jobs:
         id: release
         with:
           release-type: node
-          package-name: reactive
+          package-name: '@hlysine/reactive'
           release-as: 0.1.0
           prerelease: true
           bump-minor-pre-major: true
@@ -44,7 +44,7 @@ jobs:
         run: npm run build
         if: ${{ steps.release.outputs.release_created }}
 
-      - run: npm publish
+      - run: npm publish --access=public
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
         if: ${{ steps.release.outputs.release_created }}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { makeReactive, useReactive } from 'reactive';
+import { makeReactive, useReactive } from '@hlysine/reactive';
 
 export default makeReactive(function App() {
   const obj = useReactive(() => ({

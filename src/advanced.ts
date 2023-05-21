@@ -10,7 +10,15 @@ import {
 import { isCallable } from './helper';
 import { useRef } from 'react';
 
-export { triggerRef, toRaw, markRaw } from '@vue/reactivity';
+export {
+  shallowRef,
+  customRef,
+  shallowReactive,
+  shallowReadonly,
+  triggerRef,
+  toRaw,
+  markRaw,
+} from '@vue/reactivity';
 
 export const useShallowRef = <T>(value: T | (() => T)): ShallowRef<T> => {
   const reactiveRef = useRef<ShallowRef<T> | null>(null);

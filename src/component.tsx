@@ -18,17 +18,21 @@ interface ComponentReactivity {
  * that it can re-render when the reactive value changes.
  *
  * @example <caption>Simple usage of `makeReactive`.</caption>
+ * ```ts
  * export default makeReactive(function App() {
  *   const state = useReactive({ count: 1 });
  *   return <p>{state.count}</p>;
  * });
+ * ```
  *
  * @example <caption>Once a component is made reactive, it may access reactive values from any sources, not just from props, contexts and hooks.</caption>
+ * ```ts
  * import { reactiveState } from './anotherFile';
  *
  * export default makeReactive(function App() {
  *   return <p>{reactiveState.count}</p>;
  * });
+ * ```
  *
  * @param component The functional component to be made reactive.
  * @returns A reactive functional component.

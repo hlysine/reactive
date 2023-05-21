@@ -1,8 +1,18 @@
-# reactive
+<h1 align="center">reactive</h1>
 
-[![NPM](https://img.shields.io/npm/v/reactive.svg)](https://www.npmjs.com/package/reactive)
-[![npm](https://img.shields.io/npm/dm/reactive.svg)](https://www.npmjs.com/package/reactive)
-![GitHub](https://img.shields.io/github/license/Henry Lin/reactive)
+<div align="center">
+
+[![npm](https://img.shields.io/npm/v/@hlysine/reactive.svg)](https://www.npmjs.com/package/@hlysine/reactive)
+[![GitHub](https://img.shields.io/github/license/hlysine/reactive)](https://github.com/hlysine/reactive/blob/main/LICENSE)
+[![Coverage Status](https://coveralls.io/repos/github/hlysine/reactive/badge.svg?branch=main)](https://coveralls.io/github/hlysine/reactive?branch=main)
+[![Node.js CI](https://github.com/hlysine/reactive/actions/workflows/node-ci.yml/badge.svg?branch=main)](https://github.com/hlysine/reactive/actions/workflows/node-ci.yml)
+![TypeScript](https://badgen.net/badge/-/TypeScript?icon=typescript&label&labelColor=blue&color=555555)
+
+</div>
+
+<p align="center">
+True reactivity in React, made possible by `@vue/reactivity`.
+</p>
 
 ## Install
 
@@ -18,9 +28,11 @@ yarn add @hlysine/reactive
 
 ## Usage
 
+Under construction...
 
-## API / Props
+## API Documentation
 
+[Check out the TypeDoc here](https://hlysine.github.io/reactive/)
 
 ## License
 

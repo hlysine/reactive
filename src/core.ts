@@ -19,6 +19,8 @@ import {
 import { isCallable } from './helper';
 import { useRef } from 'react';
 
+export { ref, computed, reactive, readonly, effect } from '@vue/reactivity';
+
 export const useReference = <T>(value: T | (() => T)): Ref<UnwrapRef<T>> => {
   const reactiveRef = useRef<Ref<UnwrapRef<T>> | null>(null);
   if (reactiveRef.current === null) {

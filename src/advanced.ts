@@ -12,10 +12,10 @@ import { useRef } from 'react';
 
 export {
   shallowRef,
+  triggerRef,
   customRef,
   shallowReactive,
   shallowReadonly,
-  triggerRef,
   toRaw,
   markRaw,
 } from '@vue/reactivity';

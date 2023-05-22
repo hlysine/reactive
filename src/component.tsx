@@ -12,30 +12,33 @@ interface ComponentReactivity {
 }
 
 /**
- * Converts a functional component into a reactive component.
+ * Converts a function component into a reactive component.
  *
- * If your functional component makes use of a reactive value, the component has to be wrapped by `makeReactive` so
+ * If your function component makes use of a reactive value, the component has to be wrapped by `makeReactive` so
  * that it can re-render when the reactive value changes.
  *
- * @example <caption>Simple usage of `makeReactive`.</caption>
- * ```ts
+ * @example
+ * Simple usage of `makeReactive`.
+ * ```tsx
  * export default makeReactive(function App() {
  *   const state = useReactive({ count: 1 });
  *   return <p>{state.count}</p>;
  * });
  * ```
  *
- * @example <caption>Once a component is made reactive, it may access reactive values from any sources, not just from props, contexts and hooks.</caption>
- * ```ts
+ * @example
+ * Once a component is made reactive, it may access reactive values from any sources, not just from props, contexts
+ * and hooks.
+ * ```tsx
  * import { reactiveState } from './anotherFile';
  *
  * export default makeReactive(function App() {
  *   return <p>{reactiveState.count}</p>;
  * });
  * ```
- *
- * @param component The functional component to be made reactive.
- * @returns A reactive functional component.
+ * @typeParam T - A React function component.
+ * @param component The function component to be made reactive.
+ * @returns A reactive function component.
  */
 export const makeReactive = <T extends React.FC>(component: T): T => {
   const reactiveFC = ((props, ctx) => {

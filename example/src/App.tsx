@@ -1,5 +1,10 @@
 import React from 'react';
-import { makeReactive, useReactive } from '@hlysine/reactive';
+import {
+  makeReactive,
+  useReactive,
+  useWatch,
+  useWatchEffect,
+} from '@hlysine/reactive';
 
 export default makeReactive(function App() {
   const obj = useReactive(() => ({
@@ -11,6 +16,20 @@ export default makeReactive(function App() {
     },
     first: true,
   }));
+
+  useWatchEffect(() => {
+    console.log('watch effect', obj.nested1.a);
+    return () => console.log('watch effect cleanup');
+  });
+
+  useWatch(
+    obj,
+    (newVal, oldVal) => {
+      console.log('watch', oldVal, newVal);
+      return () => console.log('watch cleanup');
+    },
+    { deep: true, immediate: true }
+  );
 
   return (
     <>

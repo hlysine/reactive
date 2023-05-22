@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/hlysine/reactive/compare/v0.2.1...v0.3.0) (2023-05-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove useReactiveEffect, add useWatch and useWatchEffect
+
+### Features
+
+* add missing exports ([e54ab60](https://github.com/hlysine/reactive/commit/e54ab604e246322a94a882c4738319bdf599cf2b))
+* remove useReactiveEffect, add useWatch and useWatchEffect ([85cca77](https://github.com/hlysine/reactive/commit/85cca77d201471fb861bc30987693c4421cc7524))
+
 ## [0.2.1](https://github.com/hlysine/reactive/compare/v0.2.0...v0.2.1) (2023-05-21)
 
 

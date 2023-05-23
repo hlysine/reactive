@@ -7,7 +7,7 @@ import {
   shallowReadonly,
   shallowRef,
 } from '@vue/reactivity';
-import { isCallable } from './helper';
+import { isFunction } from './helper';
 import { useRef } from 'react';
 
 export {
@@ -23,7 +23,7 @@ export {
 export const useShallowRef = <T>(value: T | (() => T)): ShallowRef<T> => {
   const reactiveRef = useRef<ShallowRef<T> | null>(null);
   if (reactiveRef.current === null) {
-    reactiveRef.current = shallowRef(isCallable(value) ? value() : value);
+    reactiveRef.current = shallowRef(isFunction(value) ? value() : value);
   }
   return reactiveRef.current;
 };
@@ -42,7 +42,7 @@ export const useShallowReactive = <T extends object>(
   const reactiveRef = useRef<T | null>(null);
   if (reactiveRef.current === null) {
     reactiveRef.current = shallowReactive(
-      isCallable(target) ? target() : target
+      isFunction(target) ? target() : target
     );
   }
   return reactiveRef.current;
@@ -54,7 +54,7 @@ export const useShallowReadonly = <T extends object>(
   const reactiveRef = useRef<Readonly<T> | null>(null);
   if (reactiveRef.current === null) {
     reactiveRef.current = shallowReadonly(
-      isCallable(target) ? target() : target
+      isFunction(target) ? target() : target
     );
   }
   return reactiveRef.current;

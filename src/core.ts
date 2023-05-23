@@ -20,7 +20,7 @@ import {
   readonly,
   ref,
 } from '@vue/reactivity';
-import { hasChanged, isCallable, isFunction, traverse } from './helper';
+import { hasChanged, isFunction, traverse } from './helper';
 import { useRef } from 'react';
 
 export { ref, computed, reactive, readonly } from '@vue/reactivity';
@@ -48,7 +48,7 @@ export { ref, computed, reactive, readonly } from '@vue/reactivity';
 export const useReference = <T>(value: T | (() => T)): Ref<UnwrapRef<T>> => {
   const reactiveRef = useRef<Ref<UnwrapRef<T>> | null>(null);
   if (reactiveRef.current === null) {
-    reactiveRef.current = ref(isCallable(value) ? value() : value);
+    reactiveRef.current = ref(isFunction(value) ? value() : value);
   }
   return reactiveRef.current;
 };
@@ -156,7 +156,7 @@ export const useReactive = <T extends object>(
 ): UnwrapNestedRefs<T> => {
   const reactiveRef = useRef<UnwrapNestedRefs<T> | null>(null);
   if (reactiveRef.current === null) {
-    reactiveRef.current = reactive(isCallable(target) ? target() : target);
+    reactiveRef.current = reactive(isFunction(target) ? target() : target);
   }
   return reactiveRef.current;
 };
@@ -205,7 +205,7 @@ export const useReadonly = <T extends object>(
 ): DeepReadonly<UnwrapNestedRefs<T>> => {
   const reactiveRef = useRef<DeepReadonly<UnwrapNestedRefs<T>> | null>(null);
   if (reactiveRef.current === null) {
-    reactiveRef.current = readonly(isCallable(target) ? target() : target);
+    reactiveRef.current = readonly(isFunction(target) ? target() : target);
   }
   return reactiveRef.current;
 };

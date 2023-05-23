@@ -459,7 +459,6 @@ export const watch: WatchOverloads = <
   // eslint-disable-next-line prefer-const
   let effect: ReactiveEffectRunner<any>;
   const job = () => {
-    console.log('watch scheduler start');
     if (!effect.effect.active) {
       return;
     }

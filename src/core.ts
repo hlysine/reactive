@@ -212,15 +212,49 @@ export const useReadonly = <T extends object>(
 
 type CleanupFn = () => void;
 
+/**
+ * An enhanced version of `effect` from `@vue/reactivity`, adding support for a cleanup function.
+ *
+ * ---------------------------
+ *
+ * Registers the given function to track reactive updates.
+ *
+ * The given function will be run once immediately. Every time any reactive
+ * property that's accessed within it gets updated, the function will run again.
+ *
+ * @example
+ * ```js
+ * const count = ref(0)
+ * effect(() => {
+ *   console.log(count.value)
+ *   return () => console.log('cleanup')
+ * })
+ * count.value++
+ * ```
+ *
+ * @param fn - The function that will track reactive updates. The return value from this function will be used as a cleanup function.
+ * @param options - Allows to control the effect's behaviour.
+ * @returns A runner that can be used to control the effect after creation.
+ */
+export const effect = (
+  fn: () => CleanupFn | void,
+  options?: ReactiveEffectOptions
+): ReactiveEffectRunner => {
+  let cleanupFn: CleanupFn | undefined;
+  const runner = internalEffect(() => {
+    cleanupFn?.();
+    cleanupFn = fn() ?? undefined;
+  }, options);
+  runner.effect.onStop = () => {
+    cleanupFn?.();
+  };
+  return runner;
+};
+
 type UseWatchEffectOptions = Pick<
   ReactiveEffectOptions,
   'lazy' | 'onTrack' | 'onTrigger'
 >;
-
-interface UseWatchEffectRef {
-  effect: ReactiveEffectRunner<void>;
-  cleanup?: CleanupFn | undefined;
-}
 
 /**
  * The hook version of `effect` from `@vue/reactivity`.
@@ -256,54 +290,13 @@ export const useWatchEffect = (
   fn: () => CleanupFn | void,
   options?: UseWatchEffectOptions
 ): void => {
-  const reactiveRef = useRef<UseWatchEffectRef | null>(null);
+  const reactiveRef = useRef<ReactiveEffectRunner | null>(null);
   if (reactiveRef.current === null) {
-    reactiveRef.current = {
-      effect: null!,
-    };
-    reactiveRef.current.effect = internalEffect(() => {
-      reactiveRef.current!.cleanup?.();
-      reactiveRef.current!.cleanup = fn() ?? undefined;
-    }, options);
+    reactiveRef.current = effect(fn, options);
     onScopeDispose(() => {
       reactiveRef.current = null;
     });
   }
-};
-
-/**
- * An enhanced version of `effect` from `@vue/reactivity`, adding support for a cleanup function.
- *
- * ---------------------------
- *
- * Registers the given function to track reactive updates.
- *
- * The given function will be run once immediately. Every time any reactive
- * property that's accessed within it gets updated, the function will run again.
- *
- * @example
- * ```js
- * const count = ref(0)
- * effect(() => {
- *   console.log(count.value)
- *   return () => console.log('cleanup')
- * })
- * count.value++
- * ```
- *
- * @param fn - The function that will track reactive updates. The return value from this function will be used as a cleanup function.
- * @param options - Allows to control the effect's behaviour.
- * @returns A runner that can be used to control the effect after creation.
- */
-export const effect = (
-  fn: () => CleanupFn | void,
-  options?: ReactiveEffectOptions
-): ReactiveEffectRunner => {
-  let cleanupFn: CleanupFn | undefined;
-  return internalEffect(() => {
-    cleanupFn?.();
-    cleanupFn = fn() ?? undefined;
-  }, options);
 };
 
 // ========================================
@@ -488,6 +481,10 @@ export const watch: WatchOverloads = <
   } else {
     oldValue = effect();
   }
+
+  effect.effect.onStop = () => {
+    cleanup?.();
+  };
 
   return () => effect.effect.stop();
 };

@@ -252,11 +252,6 @@ export const effect = (
   return runner;
 };
 
-type UseWatchEffectOptions = Pick<
-  ReactiveEffectOptions,
-  'lazy' | 'onTrack' | 'onTrigger'
->;
-
 /**
  * The hook version of `effect` from `@vue/reactivity`.
  *
@@ -289,11 +284,17 @@ type UseWatchEffectOptions = Pick<
  */
 export const useWatchEffect = (
   fn: () => CleanupFn | void,
-  options?: UseWatchEffectOptions
+  options?: DebuggerOptions
 ): void => {
+  if (options && 'lazy' in options && options.lazy) {
+    console.warn(
+      '"lazy" option is not supported for useWatchEffect because the effect has to be run to collect dependencies. ' +
+        'Use watchEffect if you want to control the execution timing of the effect.'
+    );
+  }
   const reactiveRef = useRef<ReactiveEffectRunner | null>(null);
   if (reactiveRef.current === null) {
-    reactiveRef.current = effect(fn, options);
+    reactiveRef.current = effect(fn, { ...options, lazy: false });
     onScopeDispose(() => {
       reactiveRef.current = null;
     });

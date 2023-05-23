@@ -29,7 +29,7 @@ export { ref, computed, reactive, readonly } from '@vue/reactivity';
  * The hook version of `ref` from `@vue/reactivity`.
  * In addition to values accepted by `ref`, you can also pass an initializer function returning the value.
  *
- * This hook version allows the ref to be created when the component first render, then cached for future re-renders.
+ * This hook version allows the ref to be created when the component first renders, then cached for future re-renders.
  * If you pass in an initializer function, it will only be called on first render.
  *
  * -----------------------------
@@ -39,6 +39,7 @@ export { ref, computed, reactive, readonly } from '@vue/reactivity';
  *
  * @example
  * ```js
+ * // Inside a function component:
  * const count = useReference(1)
  * ```
  *
@@ -67,7 +68,7 @@ interface UseComputed {
 /**
  * The hook version of `computed` from `@vue/reactivity`.
  *
- * This hook version allows the computed ref to be created when the component first render, then cached for future re-renders.
+ * This hook version allows the computed ref to be created when the component first renders, then cached for future re-renders.
  *
  * -----------------------------
  *
@@ -126,7 +127,7 @@ export const useComputed: UseComputed = (<T>(
  * The hook version of `reactive` from `@vue/reactivity`.
  * In addition to values accepted by `reactive`, you can also pass an initializer function returning the value.
  *
- * This hook version allows the reactive object to be created when the component first render, then cached for future
+ * This hook version allows the reactive object to be created when the component first renders, then cached for future
  * re-renders.
  * If you pass in an initializer function, it will only be called on first render.
  *
@@ -165,7 +166,7 @@ export const useReactive = <T extends object>(
  * The hook version of `readonly` from `@vue/reactivity`.
  * In addition to values accepted by `readonly`, you can also pass an initializer function returning the value.
  *
- * This hook version allows the readonly ref to be created when the component first render, then cached for future
+ * This hook version allows the readonly ref to be created when the component first renders, then cached for future
  * re-renders.
  * If you pass in an initializer function, it will only be called on first render.
  *
@@ -259,7 +260,7 @@ type UseWatchEffectOptions = Pick<
 /**
  * The hook version of `effect` from `@vue/reactivity`.
  *
- * This hook version allows the effect to be set up when the component first render, then automatically stopped
+ * This hook version allows the effect to be set up when the component first renders, then automatically stopped
  * when the component unmounts.
  *
  * You may return a cleanup function from the given function to clean up side effects before the given function re-runs.
@@ -524,7 +525,7 @@ interface UseWatchOverloads {
 /**
  * The hook version of `watch`.
  *
- * This hook version allows the watch to be set up when the component first render, then automatically stopped
+ * This hook version allows the watch to be set up when the component first renders, then automatically stopped
  * when the component unmounts.
  *
  * You may return a cleanup function from the callback to clean up side effects before the callback re-runs.

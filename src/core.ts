@@ -246,8 +246,10 @@ export const effect = (
     cleanupFn?.();
     cleanupFn = fn() ?? undefined;
   }, options);
+  const baseStop = runner.effect.onStop;
   runner.effect.onStop = () => {
     cleanupFn?.();
+    baseStop?.();
   };
   return runner;
 };
@@ -484,8 +486,10 @@ export const watch: WatchOverloads = <
     oldValue = effect();
   }
 
+  const baseStop = effect.effect.onStop;
   effect.effect.onStop = () => {
     cleanup?.();
+    baseStop?.();
   };
 
   return () => effect.effect.stop();

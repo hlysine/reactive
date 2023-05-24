@@ -60,9 +60,6 @@ export const makeReactive = <T extends React.FC>(component: T): T => {
           };
         });
         if (requiresRerender) {
-          console.log(
-            'reactive: reactivity is not initialized on mount, re-rendering component to collect dependencies.\n\nThis is normal if you are in React development mode.'
-          );
           rerender();
         }
       }

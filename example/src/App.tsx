@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   makeReactive,
   useReactive,
@@ -17,18 +17,23 @@ export default makeReactive(function App() {
     first: true,
   }));
 
+  useEffect(() => {
+    console.log('App mounted');
+    return () => console.log('App unmounted');
+  }, []);
+
   useWatchEffect(() => {
-    console.log('watch effect', obj.nested1.a);
+    console.log('watch effect triggered', obj.nested1.a);
     return () => console.log('watch effect cleanup');
   });
 
   useWatch(
     obj,
     (newVal, oldVal) => {
-      console.log('watch', oldVal, newVal);
+      console.log('watch triggered', oldVal, newVal);
       return () => console.log('watch cleanup');
     },
-    { deep: true, immediate: true }
+    { immediate: true }
   );
 
   return (

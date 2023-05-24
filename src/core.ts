@@ -20,7 +20,7 @@ import {
   readonly,
   ref,
 } from '@vue/reactivity';
-import { hasChanged, isCallable, isFunction, traverse } from './helper';
+import { hasChanged, isFunction, traverse } from './helper';
 import { useRef } from 'react';
 
 export { ref, computed, reactive, readonly } from '@vue/reactivity';
@@ -29,7 +29,7 @@ export { ref, computed, reactive, readonly } from '@vue/reactivity';
  * The hook version of `ref` from `@vue/reactivity`.
  * In addition to values accepted by `ref`, you can also pass an initializer function returning the value.
  *
- * This hook version allows the ref to be created when the component first render, then cached for future re-renders.
+ * This hook version allows the ref to be created when the component first renders, then cached for future re-renders.
  * If you pass in an initializer function, it will only be called on first render.
  *
  * -----------------------------
@@ -39,6 +39,7 @@ export { ref, computed, reactive, readonly } from '@vue/reactivity';
  *
  * @example
  * ```js
+ * // Inside a function component:
  * const count = useReference(1)
  * ```
  *
@@ -48,7 +49,7 @@ export { ref, computed, reactive, readonly } from '@vue/reactivity';
 export const useReference = <T>(value: T | (() => T)): Ref<UnwrapRef<T>> => {
   const reactiveRef = useRef<Ref<UnwrapRef<T>> | null>(null);
   if (reactiveRef.current === null) {
-    reactiveRef.current = ref(isCallable(value) ? value() : value);
+    reactiveRef.current = ref(isFunction(value) ? value() : value);
   }
   return reactiveRef.current;
 };
@@ -67,7 +68,7 @@ interface UseComputed {
 /**
  * The hook version of `computed` from `@vue/reactivity`.
  *
- * This hook version allows the computed ref to be created when the component first render, then cached for future re-renders.
+ * This hook version allows the computed ref to be created when the component first renders, then cached for future re-renders.
  *
  * -----------------------------
  *
@@ -126,7 +127,7 @@ export const useComputed: UseComputed = (<T>(
  * The hook version of `reactive` from `@vue/reactivity`.
  * In addition to values accepted by `reactive`, you can also pass an initializer function returning the value.
  *
- * This hook version allows the reactive object to be created when the component first render, then cached for future
+ * This hook version allows the reactive object to be created when the component first renders, then cached for future
  * re-renders.
  * If you pass in an initializer function, it will only be called on first render.
  *
@@ -156,7 +157,7 @@ export const useReactive = <T extends object>(
 ): UnwrapNestedRefs<T> => {
   const reactiveRef = useRef<UnwrapNestedRefs<T> | null>(null);
   if (reactiveRef.current === null) {
-    reactiveRef.current = reactive(isCallable(target) ? target() : target);
+    reactiveRef.current = reactive(isFunction(target) ? target() : target);
   }
   return reactiveRef.current;
 };
@@ -165,7 +166,7 @@ export const useReactive = <T extends object>(
  * The hook version of `readonly` from `@vue/reactivity`.
  * In addition to values accepted by `readonly`, you can also pass an initializer function returning the value.
  *
- * This hook version allows the readonly ref to be created when the component first render, then cached for future
+ * This hook version allows the readonly ref to be created when the component first renders, then cached for future
  * re-renders.
  * If you pass in an initializer function, it will only be called on first render.
  *
@@ -205,71 +206,12 @@ export const useReadonly = <T extends object>(
 ): DeepReadonly<UnwrapNestedRefs<T>> => {
   const reactiveRef = useRef<DeepReadonly<UnwrapNestedRefs<T>> | null>(null);
   if (reactiveRef.current === null) {
-    reactiveRef.current = readonly(isCallable(target) ? target() : target);
+    reactiveRef.current = readonly(isFunction(target) ? target() : target);
   }
   return reactiveRef.current;
 };
 
 type CleanupFn = () => void;
-
-type UseWatchEffectOptions = Pick<
-  ReactiveEffectOptions,
-  'lazy' | 'onTrack' | 'onTrigger'
->;
-
-interface UseWatchEffectRef {
-  effect: ReactiveEffectRunner<void>;
-  cleanup?: CleanupFn | undefined;
-}
-
-/**
- * The hook version of `effect` from `@vue/reactivity`.
- *
- * This hook version allows the effect to be set up when the component first render, then automatically stopped
- * when the component unmounts.
- *
- * You may return a cleanup function from the given function to clean up side effects before the given function re-runs.
- * Note that this syntax follows that of `useEffect` from React, and is not the same as `watchEffect` from Vue.
- *
- * -----------------------------
- *
- * Registers the given function to track reactive updates.
- *
- * The given function will be run once immediately. Every time any reactive
- * property that's accessed within it gets updated, the function will run again.
- *
- * @example
- * ```js
- * // Inside a function component:
- * const count = useReference(0)
- * useWatchEffect(() => {
- *   console.log(count.value)
- *   return () => console.log('cleanup')
- * })
- * count.value++
- * ```
- *
- * @param fn - The function that will track reactive updates. The return value from this function will be used as a cleanup function.
- * @param options - Allows to control the effect's behaviour.
- */
-export const useWatchEffect = (
-  fn: () => CleanupFn | void,
-  options?: UseWatchEffectOptions
-): void => {
-  const reactiveRef = useRef<UseWatchEffectRef | null>(null);
-  if (reactiveRef.current === null) {
-    reactiveRef.current = {
-      effect: null!,
-    };
-    reactiveRef.current.effect = internalEffect(() => {
-      reactiveRef.current!.cleanup?.();
-      reactiveRef.current!.cleanup = fn() ?? undefined;
-    }, options);
-    onScopeDispose(() => {
-      reactiveRef.current = null;
-    });
-  }
-};
 
 /**
  * An enhanced version of `effect` from `@vue/reactivity`, adding support for a cleanup function.
@@ -300,10 +242,65 @@ export const effect = (
   options?: ReactiveEffectOptions
 ): ReactiveEffectRunner => {
   let cleanupFn: CleanupFn | undefined;
-  return internalEffect(() => {
+  const runner = internalEffect(() => {
     cleanupFn?.();
     cleanupFn = fn() ?? undefined;
   }, options);
+  const baseStop = runner.effect.onStop;
+  runner.effect.onStop = () => {
+    cleanupFn?.();
+    baseStop?.();
+  };
+  return runner;
+};
+
+/**
+ * The hook version of `effect` from `@vue/reactivity`.
+ *
+ * This hook version allows the effect to be set up when the component first renders, then automatically stopped
+ * when the component unmounts.
+ *
+ * You may return a cleanup function from the given function to clean up side effects before the given function re-runs.
+ * Note that this syntax follows that of `useEffect` from React, and is not the same as `watchEffect` from Vue.
+ *
+ * -----------------------------
+ *
+ * Registers the given function to track reactive updates.
+ *
+ * The given function will be run once immediately. Every time any reactive
+ * property that's accessed within it gets updated, the function will run again.
+ *
+ * @example
+ * ```js
+ * // Inside a function component:
+ * const count = useReference(0)
+ * useWatchEffect(() => {
+ *   console.log(count.value)
+ *   return () => console.log('cleanup')
+ * })
+ * count.value++
+ * ```
+ *
+ * @param fn - The function that will track reactive updates. The return value from this function will be used as a cleanup function.
+ * @param options - Allows to control the effect's behaviour.
+ */
+export const useWatchEffect = (
+  fn: () => CleanupFn | void,
+  options?: DebuggerOptions
+): void => {
+  if (options && 'lazy' in options && options.lazy) {
+    console.warn(
+      '"lazy" option is not supported for useWatchEffect because the effect has to be run to collect dependencies. ' +
+        'Use watchEffect if you want to control the execution timing of the effect.'
+    );
+  }
+  const reactiveRef = useRef<ReactiveEffectRunner | null>(null);
+  if (reactiveRef.current === null) {
+    reactiveRef.current = effect(fn, { ...options, lazy: false });
+    onScopeDispose(() => {
+      reactiveRef.current = null;
+    });
+  }
 };
 
 // ========================================
@@ -459,7 +456,6 @@ export const watch: WatchOverloads = <
   // eslint-disable-next-line prefer-const
   let effect: ReactiveEffectRunner<any>;
   const job = () => {
-    console.log('watch scheduler start');
     if (!effect.effect.active) {
       return;
     }
@@ -489,6 +485,12 @@ export const watch: WatchOverloads = <
   } else {
     oldValue = effect();
   }
+
+  const baseStop = effect.effect.onStop;
+  effect.effect.onStop = () => {
+    cleanup?.();
+    baseStop?.();
+  };
 
   return () => effect.effect.stop();
 };
@@ -528,7 +530,7 @@ interface UseWatchOverloads {
 /**
  * The hook version of `watch`.
  *
- * This hook version allows the watch to be set up when the component first render, then automatically stopped
+ * This hook version allows the watch to be set up when the component first renders, then automatically stopped
  * when the component unmounts.
  *
  * You may return a cleanup function from the callback to clean up side effects before the callback re-runs.

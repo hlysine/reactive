@@ -1,11 +1,5 @@
 import { ReactiveFlags, isRef } from '@vue/reactivity';
 
-export function isCallable<T extends (...args: any[]) => any>(
-  obj: T | unknown
-): obj is T {
-  return typeof obj === 'function';
-}
-
 export const objectToString = Object.prototype.toString;
 export const toTypeString = (value: unknown): string =>
   objectToString.call(value);
@@ -22,8 +16,9 @@ export const isSet = (val: unknown): val is Set<any> =>
 export const isPlainObject = (val: unknown): val is object =>
   toTypeString(val) === '[object Object]';
 
-export const isFunction = (val: unknown): val is Function =>
-  typeof val === 'function';
+export const isFunction = <T extends (...args: any[]) => any>(
+  obj: T | unknown
+): obj is T => typeof obj === 'function';
 
 export const hasChanged = (value: any, oldValue: any): boolean =>
   !Object.is(value, oldValue);

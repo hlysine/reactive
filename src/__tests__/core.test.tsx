@@ -1,5 +1,13 @@
 import '@testing-library/jest-dom';
-import { isReadonly, isRef, ref, useComputed, useReference } from '..';
+import {
+  isReactive,
+  isReadonly,
+  isRef,
+  ref,
+  useComputed,
+  useReactive,
+  useReference,
+} from '..';
 import 'jest-performance-testing';
 import { renderHook, act } from '@testing-library/react';
 
@@ -31,6 +39,7 @@ describe('useReference', () => {
     expect(result.current).toBe(ref);
   });
 });
+
 describe('useComputed', () => {
   it('returns a valid ref', () => {
     const { result } = renderHook(() => useComputed(() => 1));
@@ -91,5 +100,34 @@ describe('useComputed', () => {
 
     expect(result.current.value).toBe(2);
     expect(getter).toBeCalledTimes(2);
+  });
+});
+
+describe('useReactive', () => {
+  it('returns a valid reactive object', () => {
+    const { result } = renderHook(() => useReactive({ a: 1, b: 2 }));
+    expect(result.current).toEqual({ a: 1, b: 2 });
+    expect(isReactive(result.current)).toBe(true);
+  });
+  it('keeps the same instance across re-render', () => {
+    const { result, rerender } = renderHook(() => useReactive({ a: 1, b: 2 }));
+    const ref = result.current;
+
+    rerender();
+
+    expect(result.current).toBe(ref);
+  });
+  it('works with initializer function', () => {
+    const initializer = jest.fn(() => ({ a: 1, b: 2 }));
+    const { result, rerender } = renderHook(() => useReactive(initializer));
+    const ref = result.current;
+    expect(result.current).toEqual({ a: 1, b: 2 });
+    expect(initializer).toBeCalledTimes(1);
+
+    rerender();
+
+    expect(result.current).toEqual({ a: 1, b: 2 });
+    expect(initializer).toBeCalledTimes(1);
+    expect(result.current).toBe(ref);
   });
 });

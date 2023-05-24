@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0](https://github.com/hlysine/reactive/compare/v0.3.0...v0.4.0) (2023-05-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove "lazy" option for `useWatchEffect`
+
+### Bug Fixes
+
+* clean up functions not called when the component unmounts ([8ffae7f](https://github.com/hlysine/reactive/commit/8ffae7f164ab048a134022acd54a4d9918cbdf14))
+* preserve user-set onStop callbacks ([3c898f3](https://github.com/hlysine/reactive/commit/3c898f3ea593c957dc8a5b639f4662ff0417b905))
+* remove "lazy" option for `useWatchEffect` ([3eee2f7](https://github.com/hlysine/reactive/commit/3eee2f7fd2f9416297fd41804cd737b1725a3970))
+* remove debug console log ([1b5de43](https://github.com/hlysine/reactive/commit/1b5de43f8c33d780f05c0b6b8ca641843ed99981))
+
 ## [0.3.0](https://github.com/hlysine/reactive/compare/v0.2.1...v0.3.0) (2023-05-22)
 
 

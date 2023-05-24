@@ -1,7 +1,7 @@
 import React from 'react';
 import { act, render } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { makeReactive, reactive, ref, useWatchEffect } from '..';
+import { makeReactive, reactive, ref, useComputed, useWatchEffect } from '..';
 import { perf, wait } from 'react-performance-testing';
 import 'jest-performance-testing';
 
@@ -146,22 +146,26 @@ describe('makeReactive', () => {
     expect(converted.name).toBe(Tester.name);
   });
   it('stops reactive effects on unmount', async () => {
+    const count = ref(0);
+
     const mockEffect = jest.fn();
     const mockCleanup = jest.fn();
-    const count = ref(0);
+    const mockGetter = jest.fn(() => count.value + 1);
     const Tester = makeReactive(function Tester() {
       useWatchEffect(() => {
         mockEffect(count.value);
         return mockCleanup;
       });
-      return <p>{count.value}</p>;
+      const derived = useComputed(mockGetter);
+      return <p>{derived.value}</p>;
     });
 
     const { unmount, findByText } = render(<Tester />);
 
     expect(mockEffect).toBeCalledTimes(1);
     expect(mockCleanup).toBeCalledTimes(0);
-    const content1 = await findByText('0');
+    expect(mockGetter).toBeCalledTimes(1);
+    const content1 = await findByText('1');
     expect(content1).toBeTruthy();
 
     act(() => {
@@ -170,13 +174,15 @@ describe('makeReactive', () => {
 
     expect(mockEffect).toBeCalledTimes(2);
     expect(mockCleanup).toBeCalledTimes(1);
-    const content2 = await findByText('1');
+    expect(mockGetter).toBeCalledTimes(2);
+    const content2 = await findByText('2');
     expect(content2).toBeTruthy();
 
     unmount();
 
     expect(mockEffect).toBeCalledTimes(2);
     expect(mockCleanup).toBeCalledTimes(2);
+    expect(mockGetter).toBeCalledTimes(2);
 
     act(() => {
       count.value++;
@@ -184,5 +190,6 @@ describe('makeReactive', () => {
 
     expect(mockEffect).toBeCalledTimes(2);
     expect(mockCleanup).toBeCalledTimes(2);
+    expect(mockGetter).toBeCalledTimes(2);
   });
 });

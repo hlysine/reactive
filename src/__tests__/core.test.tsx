@@ -6,6 +6,7 @@ import {
   ref,
   useComputed,
   useReactive,
+  useReadonly,
   useReference,
 } from '..';
 import 'jest-performance-testing';
@@ -120,6 +121,35 @@ describe('useReactive', () => {
   it('works with initializer function', () => {
     const initializer = jest.fn(() => ({ a: 1, b: 2 }));
     const { result, rerender } = renderHook(() => useReactive(initializer));
+    const ref = result.current;
+    expect(result.current).toEqual({ a: 1, b: 2 });
+    expect(initializer).toBeCalledTimes(1);
+
+    rerender();
+
+    expect(result.current).toEqual({ a: 1, b: 2 });
+    expect(initializer).toBeCalledTimes(1);
+    expect(result.current).toBe(ref);
+  });
+});
+
+describe('useReadonly', () => {
+  it('returns a valid readonly object', () => {
+    const { result } = renderHook(() => useReadonly({ a: 1, b: 2 }));
+    expect(result.current).toEqual({ a: 1, b: 2 });
+    expect(isReadonly(result.current)).toBe(true);
+  });
+  it('keeps the same instance across re-render', () => {
+    const { result, rerender } = renderHook(() => useReadonly({ a: 1, b: 2 }));
+    const ref = result.current;
+
+    rerender();
+
+    expect(result.current).toBe(ref);
+  });
+  it('works with initializer function', () => {
+    const initializer = jest.fn(() => ({ a: 1, b: 2 }));
+    const { result, rerender } = renderHook(() => useReadonly(initializer));
     const ref = result.current;
     expect(result.current).toEqual({ a: 1, b: 2 });
     expect(initializer).toBeCalledTimes(1);

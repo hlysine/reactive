@@ -22,7 +22,7 @@ import {
   ref,
 } from '@vue/reactivity';
 import { hasChanged, isFunction, traverse } from './helper';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import messages from './messages';
 
 export { ref, computed, reactive, readonly } from '@vue/reactivity';
@@ -118,13 +118,20 @@ export const useComputed: UseComputed = (<T>(
   );
   if (reactiveRef.current === null) {
     reactiveRef.current = computed(optionsOrGetter as any, debugOptions);
-    if (getCurrentScope() === undefined) {
-      messages.warnNotInEffectScope('useComputed');
-    } else {
+    if (getCurrentScope() !== undefined) {
       onScopeDispose(() => {
         reactiveRef.current = null;
       });
     }
+  }
+  if (getCurrentScope() === undefined) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      return () => {
+        reactiveRef.current?.effect.stop();
+        reactiveRef.current = null;
+      };
+    }, []);
   }
   return reactiveRef.current;
 }) as UseComputed;
@@ -299,14 +306,24 @@ export const useWatchEffect = (
   }
   const reactiveRef = useRef<ReactiveEffectRunner | null>(null);
   if (reactiveRef.current === null) {
+    console.log('effect register');
     reactiveRef.current = effect(fn, { ...options, lazy: false });
-    if (getCurrentScope() === null) {
-      messages.warnNotInEffectScope('useWatchEffect');
-    } else {
+    if (getCurrentScope() !== undefined) {
       onScopeDispose(() => {
         reactiveRef.current = null;
       });
     }
+  }
+  if (getCurrentScope() === undefined) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      console.log('on mount');
+      return () => {
+        console.log('on unmount');
+        reactiveRef.current?.effect.stop();
+        reactiveRef.current = null;
+      };
+    }, []);
   }
 };
 
@@ -571,12 +588,19 @@ export const useWatch: UseWatchOverloads = <
   const reactiveRef = useRef<WatchStopHandle | null>(null);
   if (reactiveRef.current === null) {
     reactiveRef.current = watch(sources, cb, options);
-    if (getCurrentScope() === undefined) {
-      messages.warnNotInEffectScope('useWatch');
-    } else {
+    if (getCurrentScope() !== undefined) {
       onScopeDispose(() => {
         reactiveRef.current = null;
       });
     }
+  }
+  if (getCurrentScope() === undefined) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      return () => {
+        reactiveRef.current?.();
+        reactiveRef.current = null;
+      };
+    }, []);
   }
 };

@@ -2,10 +2,7 @@
   "compilerOptions": {
     "target": "es5",
     "module": "ESNext",
-    "lib": [
-      "ESNext",
-      "DOM"
-    ],
+    "lib": ["ESNext", "DOM"],
     "declaration": true,
     "declarationDir": "dist",
     "declarationMap": true,
@@ -23,24 +20,20 @@
     "jsx": "react",
     "baseUrl": "./src",
     "paths": {
-      "tslib": [
-        "node_modules/tslib/tslib.d.ts"
-      ]
+      "tslib": ["node_modules/tslib/tslib.d.ts"]
     },
     "plugins": [
       {
         "name": "typescript-plugin-css-modules"
       }
-    ],
+    ]
   },
-  "include": [
-    "src/**/*"
-  ],
+  "include": ["src/**/*"],
   "exclude": [
     "node_modules",
     "dist",
     "src/__tests__",
     "**/*.test.tsx",
-    "**/*.spec.tsx",
+    "**/*.spec.tsx"
   ]
 }

@@ -44,6 +44,7 @@ export const makeReactive = <T extends React.FC>(component: T): T => {
   const reactiveFC = ((props, ctx) => {
     const reactivityRef = useRef<ComponentReactivity | null>(null);
     const [, setTick] = useState(0);
+    const rerender = () => setTick((v) => v + 1);
 
     const initializeRef = (requiresRerender: boolean) => {
       if (reactivityRef.current === null) {
@@ -51,7 +52,7 @@ export const makeReactive = <T extends React.FC>(component: T): T => {
         scope.run(() => {
           const runner = effect(() => component(props, ctx), {
             lazy: true,
-            scheduler: () => setTick((v) => v + 1),
+            scheduler: rerender,
           });
           reactivityRef.current = {
             scope,
@@ -62,7 +63,7 @@ export const makeReactive = <T extends React.FC>(component: T): T => {
           console.log(
             'reactive: reactivity is not initialized on mount, re-rendering component to collect dependencies.\n\nThis is normal if you are in React development mode.'
           );
-          setTick((v) => v + 1);
+          rerender();
         }
       }
     };

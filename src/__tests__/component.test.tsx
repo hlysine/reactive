@@ -108,7 +108,7 @@ describe('makeReactive', () => {
 
     const { findByText } = render(<Tester />);
 
-    expect(mockEffect.mock.calls).toHaveLength(1);
+    expect(mockEffect).toBeCalledTimes(1);
     const content = await findByText('1');
     expect(content).toBeTruthy();
 
@@ -119,7 +119,7 @@ describe('makeReactive', () => {
     await wait(async () => {
       // should not re-render, but should trigger effect again
       expect(renderCount.current.Tester).toBeRenderedTimes(1);
-      expect(mockEffect.mock.calls).toHaveLength(2);
+      expect(mockEffect).toBeCalledTimes(2);
       const content = await findByText('1');
       expect(content).toBeTruthy();
     });
@@ -159,8 +159,8 @@ describe('makeReactive', () => {
 
     const { unmount, findByText } = render(<Tester />);
 
-    expect(mockEffect.mock.calls).toHaveLength(1);
-    expect(mockCleanup.mock.calls).toHaveLength(0);
+    expect(mockEffect).toBeCalledTimes(1);
+    expect(mockCleanup).toBeCalledTimes(0);
     const content1 = await findByText('0');
     expect(content1).toBeTruthy();
 
@@ -168,21 +168,21 @@ describe('makeReactive', () => {
       count.value++;
     });
 
-    expect(mockEffect.mock.calls).toHaveLength(2);
-    expect(mockCleanup.mock.calls).toHaveLength(1);
+    expect(mockEffect).toBeCalledTimes(2);
+    expect(mockCleanup).toBeCalledTimes(1);
     const content2 = await findByText('1');
     expect(content2).toBeTruthy();
 
     unmount();
 
-    expect(mockEffect.mock.calls).toHaveLength(2);
-    expect(mockCleanup.mock.calls).toHaveLength(2);
+    expect(mockEffect).toBeCalledTimes(2);
+    expect(mockCleanup).toBeCalledTimes(2);
 
     act(() => {
       count.value++;
     });
 
-    expect(mockEffect.mock.calls).toHaveLength(2);
-    expect(mockCleanup.mock.calls).toHaveLength(2);
+    expect(mockEffect).toBeCalledTimes(2);
+    expect(mockCleanup).toBeCalledTimes(2);
   });
 });

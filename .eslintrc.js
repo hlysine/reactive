@@ -35,6 +35,10 @@ module.exports = {
     '@typescript-eslint/no-use-before-define': ['error'],
     'react-hooks/rules-of-hooks': 'error', // Checks rules of Hooks
     'react-hooks/exhaustive-deps': 'warn', // Checks effect dependencies
-    'react/react-in-jsx-scope': 'off', // suppress errors for missing 'import React' in files
+    'no-unused-vars': 'off',
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+    ],
   },
 };

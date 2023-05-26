@@ -4,7 +4,7 @@ import {
   ReactiveEffectRunner,
   effect,
 } from '@vue/reactivity';
-import { getFiberInDev } from 'helper';
+import { getFiberInDev } from './helper';
 import { useEffect, useRef, useState } from 'react';
 
 interface ComponentReactivity {

@@ -28,7 +28,7 @@
     "make:docs": "typedoc",
     "lint": "eslint src",
     "test": "jest --coverage",
-    "test:watch": "jest --coverage --watch",
+    "test:watch": "jest --watch",
     "predeploy": "typedoc",
     "deploy": "gh-pages -d docs",
     "prepare": "husky install"

@@ -11,6 +11,7 @@ import {
   WritableComputedOptions,
   WritableComputedRef,
   computed,
+  getCurrentScope,
   effect as internalEffect,
   isReactive,
   isRef,
@@ -20,8 +21,9 @@ import {
   readonly,
   ref,
 } from '@vue/reactivity';
-import { hasChanged, isFunction, traverse } from './helper';
-import { useRef } from 'react';
+import { getFiberInDev, hasChanged, isFunction, traverse } from './helper';
+import { useEffect, useRef } from 'react';
+import messages from './messages';
 
 export { ref, computed, reactive, readonly } from '@vue/reactivity';
 
@@ -116,9 +118,22 @@ export const useComputed: UseComputed = (<T>(
   );
   if (reactiveRef.current === null) {
     reactiveRef.current = computed(optionsOrGetter as any, debugOptions);
-    onScopeDispose(() => {
-      reactiveRef.current = null;
-    });
+    if (getCurrentScope() !== undefined) {
+      onScopeDispose(() => {
+        reactiveRef.current = null;
+      });
+    } else if (getFiberInDev() !== null) {
+      messages.warnNotInMakeReactive('useComputed');
+    }
+  }
+  if (getCurrentScope() === undefined) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      return () => {
+        reactiveRef.current?.effect.stop();
+        reactiveRef.current = null;
+      };
+    }, []);
   }
   return reactiveRef.current;
 }) as UseComputed;
@@ -289,17 +304,27 @@ export const useWatchEffect = (
   options?: DebuggerOptions
 ): void => {
   if (options && 'lazy' in options && options.lazy) {
-    console.warn(
-      '"lazy" option is not supported for useWatchEffect because the effect has to be run to collect dependencies. ' +
-        'Use watchEffect if you want to control the execution timing of the effect.'
-    );
+    messages.warnLazyWatchEffect();
   }
   const reactiveRef = useRef<ReactiveEffectRunner | null>(null);
   if (reactiveRef.current === null) {
     reactiveRef.current = effect(fn, { ...options, lazy: false });
-    onScopeDispose(() => {
-      reactiveRef.current = null;
-    });
+    if (getCurrentScope() !== undefined) {
+      onScopeDispose(() => {
+        reactiveRef.current = null;
+      });
+    } else if (getFiberInDev() !== null) {
+      messages.warnNotInMakeReactive('useWatchEffect');
+    }
+  }
+  if (getCurrentScope() === undefined) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      return () => {
+        reactiveRef.current?.effect.stop();
+        reactiveRef.current = null;
+      };
+    }, []);
   }
 };
 
@@ -399,13 +424,6 @@ export const watch: WatchOverloads = <
   cb: WatchCallback<MapSources<T, false>, MapSources<T, Immediate>>,
   options?: WatchOptions<Immediate>
 ): WatchStopHandle => {
-  const warnInvalidSource = (s: unknown) =>
-    console.warn(
-      'Invalid watch source: ',
-      s,
-      'A watch source can only be a getter/effect function, a ref, a reactive object, or an array of these types.'
-    );
-
   let deep = options?.deep ?? false;
   const immediate = options?.immediate ?? false;
   const onTrack = options?.onTrack ?? undefined;
@@ -433,14 +451,14 @@ export const watch: WatchOverloads = <
         } else if (isFunction(s)) {
           return s();
         } else {
-          warnInvalidSource(s);
+          messages.warnInvalidWatchSource(s);
           return s;
         }
       });
   } else if (isFunction(sources)) {
     getter = sources;
   } else {
-    warnInvalidSource(sources);
+    messages.warnInvalidWatchSource(sources);
     getter = () => sources;
   }
   if (deep) {
@@ -571,8 +589,21 @@ export const useWatch: UseWatchOverloads = <
   const reactiveRef = useRef<WatchStopHandle | null>(null);
   if (reactiveRef.current === null) {
     reactiveRef.current = watch(sources, cb, options);
-    onScopeDispose(() => {
-      reactiveRef.current = null;
-    });
+    if (getCurrentScope() !== undefined) {
+      onScopeDispose(() => {
+        reactiveRef.current = null;
+      });
+    } else if (getFiberInDev() !== null) {
+      messages.warnNotInMakeReactive('useWatch');
+    }
+  }
+  if (getCurrentScope() === undefined) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      return () => {
+        reactiveRef.current?.();
+        reactiveRef.current = null;
+      };
+    }, []);
   }
 };

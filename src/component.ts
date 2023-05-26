@@ -4,12 +4,15 @@ import {
   ReactiveEffectRunner,
   effect,
 } from '@vue/reactivity';
+import { getFiberInDev } from './helper';
 import { useEffect, useRef, useState } from 'react';
 
 interface ComponentReactivity {
   scope: EffectScope;
   effect: ReactiveEffectRunner;
 }
+
+const renderedComponents = new WeakMap<any, ComponentReactivity>();
 
 /**
  * Converts a function component into a reactive component.
@@ -44,6 +47,7 @@ export const makeReactive = <T extends React.FC>(component: T): T => {
   const reactiveFC = ((props, ctx) => {
     const reactivityRef = useRef<ComponentReactivity | null>(null);
     const [, setTick] = useState(0);
+    const rerender = () => setTick((v) => v + 1);
 
     const initializeRef = (requiresRerender: boolean) => {
       if (reactivityRef.current === null) {
@@ -51,7 +55,7 @@ export const makeReactive = <T extends React.FC>(component: T): T => {
         scope.run(() => {
           const runner = effect(() => component(props, ctx), {
             lazy: true,
-            scheduler: () => setTick((v) => v + 1),
+            scheduler: rerender,
           });
           reactivityRef.current = {
             scope,
@@ -59,10 +63,7 @@ export const makeReactive = <T extends React.FC>(component: T): T => {
           };
         });
         if (requiresRerender) {
-          console.log(
-            'reactive: reactivity is not initialized on mount, re-rendering component to collect dependencies.\n\nThis is normal if you are in React development mode.'
-          );
-          setTick((v) => v + 1);
+          rerender();
         }
       }
     };
@@ -76,7 +77,22 @@ export const makeReactive = <T extends React.FC>(component: T): T => {
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    const fiber = getFiberInDev();
+    if (fiber !== null) {
+      // only prevent double render when fiber is not null, indicating development mode
+      const doubleRendered =
+        renderedComponents.get(fiber) ??
+        (fiber.alternate ? renderedComponents.get(fiber.alternate) : undefined);
+      if (doubleRendered && reactivityRef.current === null) {
+        doubleRendered.scope.stop();
+      }
+    }
+
     initializeRef(false);
+
+    if (fiber !== null) {
+      renderedComponents.set(fiber, reactivityRef.current!);
+    }
 
     return reactivityRef.current?.scope.run(() =>
       reactivityRef.current?.effect()

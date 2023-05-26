@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.4.1](https://github.com/hlysine/reactive/compare/v0.4.0...v0.4.1) (2023-05-26)
+
+
+### Features
+
+* allow reactive hooks to be used outside reactive components ([aeea136](https://github.com/hlysine/reactive/commit/aeea136cdc47efa35069c22a224ef4ab70ccd327))
+* show warning when certain hooks are used outside of effect scope ([32d6194](https://github.com/hlysine/reactive/commit/32d6194f3425e4563d6c33f69721b1737819b428))
+
+
+### Bug Fixes
+
+* fix effects not getting cleaned up due to strict mode double rendering ([6ed504b](https://github.com/hlysine/reactive/commit/6ed504b1410d1bf16d5f0d5a3b3fdcc348ea95ce))
+* fix incorrect import ([a3975a8](https://github.com/hlysine/reactive/commit/a3975a8ff5c906f959dfa9312aa6fdc27c4eddc8))
+* remove re-render message to avoid spam when in dev mode ([30275a4](https://github.com/hlysine/reactive/commit/30275a4ba59261d20dd4b6f63d5c378ab98f8028))
+
 ## [0.4.0](https://github.com/hlysine/reactive/compare/v0.3.0...v0.4.0) (2023-05-24)
 
 

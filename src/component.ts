@@ -4,12 +4,15 @@ import {
   ReactiveEffectRunner,
   effect,
 } from '@vue/reactivity';
+import { getFiberInDev } from 'helper';
 import { useEffect, useRef, useState } from 'react';
 
 interface ComponentReactivity {
   scope: EffectScope;
   effect: ReactiveEffectRunner;
 }
+
+const renderedComponents = new WeakMap<any, ComponentReactivity>();
 
 /**
  * Converts a function component into a reactive component.
@@ -74,7 +77,22 @@ export const makeReactive = <T extends React.FC>(component: T): T => {
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    const fiber = getFiberInDev();
+    if (fiber !== null) {
+      // only prevent double render when fiber is not null, indicating development mode
+      const doubleRendered =
+        renderedComponents.get(fiber) ??
+        (fiber.alternate ? renderedComponents.get(fiber.alternate) : undefined);
+      if (doubleRendered && reactivityRef.current === null) {
+        doubleRendered.scope.stop();
+      }
+    }
+
     initializeRef(false);
+
+    if (fiber !== null) {
+      renderedComponents.set(fiber, reactivityRef.current!);
+    }
 
     return reactivityRef.current?.scope.run(() =>
       reactivityRef.current?.effect()

@@ -1,55 +1,28 @@
-import React, { useEffect } from 'react';
-import {
-  makeReactive,
-  useReactive,
-  useWatch,
-  useWatchEffect,
-} from '@hlysine/reactive';
+import React, { useState } from 'react';
+import { makeReactive, reactive, useWatchEffect } from '@hlysine/reactive';
+
+const obj = reactive({ a: 1, b: 2 });
+
+const Watcher = makeReactive(function Watcher() {
+  const [, setState] = useState(0);
+  useWatchEffect(() => {
+    console.log('watchEffect', obj.a);
+    setState(obj.a);
+    return () => console.log('cleanup useWatchEffect');
+  });
+  console.log('render App');
+
+  return <button onClick={() => obj.a++}>Test update inside watcher</button>;
+});
 
 export default makeReactive(function App() {
-  const obj = useReactive(() => ({
-    nested1: {
-      a: 1,
-    },
-    nested2: {
-      b: 1,
-    },
-    first: true,
-  }));
-
-  useEffect(() => {
-    console.log('App mounted');
-    return () => console.log('App unmounted');
-  }, []);
-
-  useWatchEffect(() => {
-    console.log('watch effect triggered', obj.nested1.a);
-    return () => console.log('watch effect cleanup');
-  });
-
-  useWatch(
-    obj,
-    (newVal, oldVal) => {
-      console.log('watch triggered', oldVal, newVal);
-      return () => console.log('watch cleanup');
-    },
-    { immediate: true }
-  );
+  const [show, setShow] = useState(true);
 
   return (
     <>
-      <button type="button" onClick={() => (obj.first = !obj.first)}>
-        {obj.first ? 'first' : 'second'}
-      </button>
-      {obj.first ? (
-        <button type="button" onClick={() => obj.nested1.a++}>
-          {obj.nested1.a}
-        </button>
-      ) : (
-        <button type="button" onClick={() => obj.nested2.b++}>
-          {obj.nested2.b}
-        </button>
-      )}
+      <button onClick={() => setShow((v) => !v)}>show watcher</button>
+      <button onClick={() => obj.a++}>Test update</button>
+      {show && <Watcher />}
     </>
   );
 });

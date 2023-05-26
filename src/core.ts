@@ -21,7 +21,7 @@ import {
   readonly,
   ref,
 } from '@vue/reactivity';
-import { hasChanged, isFunction, traverse } from './helper';
+import { getFiberInDev, hasChanged, isFunction, traverse } from './helper';
 import { useEffect, useRef } from 'react';
 import messages from './messages';
 
@@ -122,6 +122,8 @@ export const useComputed: UseComputed = (<T>(
       onScopeDispose(() => {
         reactiveRef.current = null;
       });
+    } else if (getFiberInDev() !== null) {
+      messages.warnNotInMakeReactive('useComputed');
     }
   }
   if (getCurrentScope() === undefined) {
@@ -306,20 +308,19 @@ export const useWatchEffect = (
   }
   const reactiveRef = useRef<ReactiveEffectRunner | null>(null);
   if (reactiveRef.current === null) {
-    console.log('effect register');
     reactiveRef.current = effect(fn, { ...options, lazy: false });
     if (getCurrentScope() !== undefined) {
       onScopeDispose(() => {
         reactiveRef.current = null;
       });
+    } else if (getFiberInDev() !== null) {
+      messages.warnNotInMakeReactive('useWatchEffect');
     }
   }
   if (getCurrentScope() === undefined) {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
-      console.log('on mount');
       return () => {
-        console.log('on unmount');
         reactiveRef.current?.effect.stop();
         reactiveRef.current = null;
       };
@@ -592,6 +593,8 @@ export const useWatch: UseWatchOverloads = <
       onScopeDispose(() => {
         reactiveRef.current = null;
       });
+    } else if (getFiberInDev() !== null) {
+      messages.warnNotInMakeReactive('useWatch');
     }
   }
   if (getCurrentScope() === undefined) {

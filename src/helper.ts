@@ -1,4 +1,19 @@
 import { ReactiveFlags, isRef } from '@vue/reactivity';
+import { __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED as SecretInternals } from 'react';
+
+declare module 'react' {
+  interface Fiber {
+    [key: string]: any;
+    alternate: Fiber | null;
+  }
+  export const __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED: {
+    ReactCurrentOwner: {
+      current: Fiber | null;
+    };
+  };
+}
+
+export const getFiberInDev = () => SecretInternals.ReactCurrentOwner.current;
 
 export const objectToString = Object.prototype.toString;
 export const toTypeString = (value: unknown): string =>

@@ -192,4 +192,55 @@ describe('makeReactive', () => {
     expect(mockCleanup).toBeCalledTimes(2);
     expect(mockGetter).toBeCalledTimes(2);
   });
+  it('stops reactive effects on unmount (Strict Mode)', async () => {
+    const count = ref(0);
+
+    const mockEffect = jest.fn();
+    const mockCleanup = jest.fn();
+    const mockGetter = jest.fn(() => count.value + 1);
+    const Tester = makeReactive(function Tester() {
+      useWatchEffect(() => {
+        mockEffect(count.value);
+        return mockCleanup;
+      });
+      const derived = useComputed(mockGetter);
+      return <p>{derived.value}</p>;
+    });
+
+    const { unmount, findByText } = render(
+      <React.StrictMode>
+        <Tester />
+      </React.StrictMode>
+    );
+
+    expect(mockEffect).toBeCalledTimes(3);
+    expect(mockCleanup).toBeCalledTimes(2);
+    expect(mockGetter).toBeCalledTimes(3);
+    const content1 = await findByText('1');
+    expect(content1).toBeTruthy();
+
+    act(() => {
+      count.value++;
+    });
+
+    expect(mockEffect).toBeCalledTimes(4);
+    expect(mockCleanup).toBeCalledTimes(3);
+    expect(mockGetter).toBeCalledTimes(4);
+    const content2 = await findByText('2');
+    expect(content2).toBeTruthy();
+
+    unmount();
+
+    expect(mockEffect).toBeCalledTimes(4);
+    expect(mockCleanup).toBeCalledTimes(4);
+    expect(mockGetter).toBeCalledTimes(4);
+
+    act(() => {
+      count.value++;
+    });
+
+    expect(mockEffect).toBeCalledTimes(4);
+    expect(mockCleanup).toBeCalledTimes(4);
+    expect(mockGetter).toBeCalledTimes(4);
+  });
 });

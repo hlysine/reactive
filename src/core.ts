@@ -361,6 +361,7 @@ export type WatchCallback<V = any, OV = any> = (
 export interface WatchOptions<Immediate = boolean> extends DebuggerOptions {
   immediate?: Immediate;
   deep?: boolean;
+  onStop?: () => void;
 }
 
 export type WatchStopHandle = () => void;
@@ -432,6 +433,7 @@ export const watch: WatchOverloads = <
   const immediate = options?.immediate ?? false;
   const onTrack = options?.onTrack ?? undefined;
   const onTrigger = options?.onTrigger ?? undefined;
+  const onStop = options?.onStop ?? undefined;
 
   let getter: () => any;
   let isMultiSource = false;
@@ -498,6 +500,7 @@ export const watch: WatchOverloads = <
     allowRecurse: true,
     onTrack,
     onTrigger,
+    onStop,
   });
   if (immediate) {
     job();
@@ -514,12 +517,17 @@ export const watch: WatchOverloads = <
   return () => effect.effect.stop();
 };
 
+export interface UseWatchOptions<Immediate = boolean> extends DebuggerOptions {
+  immediate?: Immediate;
+  deep?: boolean;
+}
+
 interface UseWatchOverloads {
   // overload: array of multiple sources + cb
   <T extends MultiWatchSources, Immediate extends Readonly<boolean> = false>(
     sources: [...T],
     cb: WatchCallback<MapSources<T, false>, MapSources<T, Immediate>>,
-    options?: WatchOptions<Immediate>
+    options?: UseWatchOptions<Immediate>
   ): void;
   // overload: multiple sources w/ `as const`
   // watch([foo, bar] as const, () => {})
@@ -530,19 +538,19 @@ interface UseWatchOverloads {
   >(
     source: T,
     cb: WatchCallback<MapSources<T, false>, MapSources<T, Immediate>>,
-    options?: WatchOptions<Immediate>
+    options?: UseWatchOptions<Immediate>
   ): void;
   // overload: single source + cb
   <T, Immediate extends Readonly<boolean> = false>(
     source: WatchSource<T>,
     cb: WatchCallback<T, Immediate extends true ? T | undefined : T>,
-    options?: WatchOptions<Immediate>
+    options?: UseWatchOptions<Immediate>
   ): void;
   // overload: watching reactive object w/ cb
   <T extends object, Immediate extends Readonly<boolean> = false>(
     source: T,
     cb: WatchCallback<T, Immediate extends true ? T | undefined : T>,
-    options?: WatchOptions<Immediate>
+    options?: UseWatchOptions<Immediate>
   ): void;
 }
 

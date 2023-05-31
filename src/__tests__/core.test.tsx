@@ -504,6 +504,29 @@ describe('watch', () => {
 
     expect(effectFn).toBeCalledTimes(3);
   });
+  it('calls onStop function', () => {
+    const counter = ref(1);
+    const effectFn = jest.fn();
+    const cleanupFn = jest.fn();
+    const stopFn = jest.fn();
+
+    const runner = watch(
+      counter,
+      () => {
+        effectFn(counter.value);
+        return cleanupFn;
+      },
+      { onStop: stopFn, immediate: true }
+    );
+
+    expect(stopFn).toBeCalledTimes(0);
+    expect(cleanupFn).toBeCalledTimes(0);
+
+    runner();
+
+    expect(stopFn).toBeCalledTimes(1);
+    expect(cleanupFn).toBeCalledTimes(1);
+  });
   it('cleans up properly', () => {
     const counter = ref(1);
     const effectFn = jest.fn();

@@ -11,7 +11,7 @@
 </div>
 
 <p align="center">
-True reactivity in React, made possible by `@vue/reactivity`.
+Use Vue's reactivity in React, the React way.
 </p>
 
 ## Install

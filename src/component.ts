@@ -43,8 +43,10 @@ const renderedComponents = new WeakMap<any, ComponentReactivity>();
  * @param component The function component to be made reactive.
  * @returns A reactive function component.
  */
-export const makeReactive = <T extends React.FC>(component: T): T => {
-  const reactiveFC = ((props, ctx) => {
+export const makeReactive = <P extends {}>(
+  component: React.FC<P>
+): React.FC<P> => {
+  const ReactiveFC: React.FC<P> = (props, ctx) => {
     const reactivityRef = useRef<ComponentReactivity | null>(null);
     const [, setTick] = useState(0);
     const rerender = () => setTick((v) => v + 1);
@@ -97,14 +99,14 @@ export const makeReactive = <T extends React.FC>(component: T): T => {
     return reactivityRef.current!.scope.run(() =>
       reactivityRef.current!.effect()
     );
-  }) as T;
-  reactiveFC.propTypes = component.propTypes;
-  reactiveFC.contextTypes = component.contextTypes;
-  reactiveFC.defaultProps = component.defaultProps;
-  reactiveFC.displayName = component.displayName;
-  Object.defineProperty(reactiveFC, 'name', {
+  };
+  ReactiveFC.propTypes = component.propTypes;
+  ReactiveFC.contextTypes = component.contextTypes;
+  ReactiveFC.defaultProps = component.defaultProps;
+  ReactiveFC.displayName = component.displayName;
+  Object.defineProperty(ReactiveFC, 'name', {
     value: component.name,
     writable: false,
   });
-  return reactiveFC;
+  return ReactiveFC;
 };

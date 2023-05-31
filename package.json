@@ -8,7 +8,7 @@
     "reactivity",
     "hooks"
   ],
-  "description": "",
+  "description": "Use Vue's reactivity in React, the React way.",
   "main": "dist/index.min.js",
   "module": "dist/index.es.js",
   "types": "dist/index.d.ts",

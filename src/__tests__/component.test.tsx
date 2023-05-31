@@ -22,6 +22,28 @@ describe('makeReactive', () => {
     const content = await findByText('Test component');
     expect(content).toBeTruthy();
   });
+  it('accepts props', async () => {
+    const Tester = makeReactive(function Tester({
+      value,
+      onChange,
+    }: {
+      value: string;
+      onChange: () => void;
+    }) {
+      return (
+        <>
+          <p>{value}</p>
+          <input onChange={onChange} value={value} />
+        </>
+      );
+    });
+
+    const { findByText } = render(
+      <Tester value="Test component" onChange={() => {}} />
+    );
+    const content = await findByText('Test component');
+    expect(content).toBeTruthy();
+  });
   it('re-renders when ref changes', async () => {
     const count = ref(0);
     const Tester = makeReactive(function Tester() {

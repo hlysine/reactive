@@ -130,8 +130,10 @@ export const useComputed: UseComputed = (<T>(
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
       return () => {
-        reactiveRef.current?.effect.stop();
-        reactiveRef.current = null;
+        if (reactiveRef.current !== null) {
+          reactiveRef.current.effect.stop();
+          reactiveRef.current = null;
+        }
       };
     }, []);
   }
@@ -321,8 +323,10 @@ export const useWatchEffect = (
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
       return () => {
-        reactiveRef.current?.effect.stop();
-        reactiveRef.current = null;
+        if (reactiveRef.current !== null) {
+          reactiveRef.current.effect.stop();
+          reactiveRef.current = null;
+        }
       };
     }, []);
   }
@@ -474,9 +478,6 @@ export const watch: WatchOverloads = <
   // eslint-disable-next-line prefer-const
   let effect: ReactiveEffectRunner<any>;
   const job = () => {
-    if (!effect.effect.active) {
-      return;
-    }
     const newValue = effect();
     if (
       deep ||
@@ -607,8 +608,10 @@ export const useWatch: UseWatchOverloads = <
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
       return () => {
-        reactiveRef.current?.();
-        reactiveRef.current = null;
+        if (reactiveRef.current !== null) {
+          reactiveRef.current();
+          reactiveRef.current = null;
+        }
       };
     }, []);
   }

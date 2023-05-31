@@ -130,8 +130,10 @@ export const useComputed: UseComputed = (<T>(
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
       return () => {
-        reactiveRef.current?.effect.stop();
-        reactiveRef.current = null;
+        if (reactiveRef.current !== null) {
+          reactiveRef.current.effect.stop();
+          reactiveRef.current = null;
+        }
       };
     }, []);
   }
@@ -321,8 +323,10 @@ export const useWatchEffect = (
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
       return () => {
-        reactiveRef.current?.effect.stop();
-        reactiveRef.current = null;
+        if (reactiveRef.current !== null) {
+          reactiveRef.current.effect.stop();
+          reactiveRef.current = null;
+        }
       };
     }, []);
   }
@@ -357,6 +361,7 @@ export type WatchCallback<V = any, OV = any> = (
 export interface WatchOptions<Immediate = boolean> extends DebuggerOptions {
   immediate?: Immediate;
   deep?: boolean;
+  onStop?: () => void;
 }
 
 export type WatchStopHandle = () => void;
@@ -426,8 +431,6 @@ export const watch: WatchOverloads = <
 ): WatchStopHandle => {
   let deep = options?.deep ?? false;
   const immediate = options?.immediate ?? false;
-  const onTrack = options?.onTrack ?? undefined;
-  const onTrigger = options?.onTrigger ?? undefined;
 
   let getter: () => any;
   let isMultiSource = false;
@@ -474,9 +477,6 @@ export const watch: WatchOverloads = <
   // eslint-disable-next-line prefer-const
   let effect: ReactiveEffectRunner<any>;
   const job = () => {
-    if (!effect.effect.active) {
-      return;
-    }
     const newValue = effect();
     if (
       deep ||
@@ -495,8 +495,9 @@ export const watch: WatchOverloads = <
   effect = internalEffect(getter, {
     scheduler: job,
     allowRecurse: true,
-    onTrack,
-    onTrigger,
+    onTrack: options?.onTrack,
+    onTrigger: options?.onTrigger,
+    onStop: options?.onStop,
   });
   if (immediate) {
     job();
@@ -513,12 +514,17 @@ export const watch: WatchOverloads = <
   return () => effect.effect.stop();
 };
 
+export interface UseWatchOptions<Immediate = boolean> extends DebuggerOptions {
+  immediate?: Immediate;
+  deep?: boolean;
+}
+
 interface UseWatchOverloads {
   // overload: array of multiple sources + cb
   <T extends MultiWatchSources, Immediate extends Readonly<boolean> = false>(
     sources: [...T],
     cb: WatchCallback<MapSources<T, false>, MapSources<T, Immediate>>,
-    options?: WatchOptions<Immediate>
+    options?: UseWatchOptions<Immediate>
   ): void;
   // overload: multiple sources w/ `as const`
   // watch([foo, bar] as const, () => {})
@@ -529,19 +535,19 @@ interface UseWatchOverloads {
   >(
     source: T,
     cb: WatchCallback<MapSources<T, false>, MapSources<T, Immediate>>,
-    options?: WatchOptions<Immediate>
+    options?: UseWatchOptions<Immediate>
   ): void;
   // overload: single source + cb
   <T, Immediate extends Readonly<boolean> = false>(
     source: WatchSource<T>,
     cb: WatchCallback<T, Immediate extends true ? T | undefined : T>,
-    options?: WatchOptions<Immediate>
+    options?: UseWatchOptions<Immediate>
   ): void;
   // overload: watching reactive object w/ cb
   <T extends object, Immediate extends Readonly<boolean> = false>(
     source: T,
     cb: WatchCallback<T, Immediate extends true ? T | undefined : T>,
-    options?: WatchOptions<Immediate>
+    options?: UseWatchOptions<Immediate>
   ): void;
 }
 
@@ -586,9 +592,15 @@ export const useWatch: UseWatchOverloads = <
   cb: WatchCallback<MapSources<T, false>, MapSources<T, Immediate>>,
   options?: WatchOptions<Immediate>
 ): void => {
+  if (options && 'lazy' in options && options.lazy) {
+    messages.warnLazyWatch();
+  }
   const reactiveRef = useRef<WatchStopHandle | null>(null);
   if (reactiveRef.current === null) {
-    reactiveRef.current = watch(sources, cb, options);
+    reactiveRef.current = watch(sources, cb, {
+      ...options,
+      lazy: false,
+    } as WatchOptions<Immediate>);
     if (getCurrentScope() !== undefined) {
       onScopeDispose(() => {
         reactiveRef.current = null;
@@ -601,8 +613,10 @@ export const useWatch: UseWatchOverloads = <
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
       return () => {
-        reactiveRef.current?.();
-        reactiveRef.current = null;
+        if (reactiveRef.current !== null) {
+          reactiveRef.current();
+          reactiveRef.current = null;
+        }
       };
     }, []);
   }

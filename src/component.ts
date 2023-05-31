@@ -71,7 +71,7 @@ export const makeReactive = <T extends React.FC>(component: T): T => {
     useEffect(() => {
       initializeRef(true);
       return () => {
-        reactivityRef.current?.scope.stop();
+        reactivityRef.current!.scope.stop();
         reactivityRef.current = null;
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -94,8 +94,8 @@ export const makeReactive = <T extends React.FC>(component: T): T => {
       renderedComponents.set(fiber, reactivityRef.current!);
     }
 
-    return reactivityRef.current?.scope.run(() =>
-      reactivityRef.current?.effect()
+    return reactivityRef.current!.scope.run(() =>
+      reactivityRef.current!.effect()
     );
   }) as T;
   reactiveFC.propTypes = component.propTypes;

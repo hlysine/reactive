@@ -7,4 +7,5 @@ export {
   isProxy,
   isReactive,
   isReadonly,
+  isShallow,
 } from '@vue/reactivity';

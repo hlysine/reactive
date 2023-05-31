@@ -9,9 +9,21 @@ import {
   useReactive,
   useReadonly,
   useReference,
+  useWatchEffect,
 } from '..';
 import 'jest-performance-testing';
 import { renderHook, act } from '@testing-library/react';
+
+let consoleLog: jest.SpyInstance;
+
+beforeEach(() => {
+  consoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
+});
+
+afterEach(() => {
+  jest.resetAllMocks();
+  jest.restoreAllMocks();
+});
 
 describe('useReference', () => {
   it('returns a valid ref', () => {
@@ -86,7 +98,7 @@ describe('useComputed', () => {
   it('is reactive', () => {
     const count = ref(0);
     const getter = jest.fn(() => count.value + 1);
-    const { result, rerender } = renderHook(() => useComputed(getter));
+    const { result, rerender, unmount } = renderHook(() => useComputed(getter));
 
     expect(result.current.value).toBe(1);
     expect(getter).toBeCalledTimes(1);
@@ -102,6 +114,17 @@ describe('useComputed', () => {
 
     expect(result.current.value).toBe(2);
     expect(getter).toBeCalledTimes(2);
+
+    unmount();
+    act(() => {
+      count.value++;
+    });
+
+    expect(result.current.value).toBe(2);
+    expect(getter).toBeCalledTimes(2);
+
+    // expect the hook to warn about using it inside a component that is not wrapped by makeReactive
+    expect(consoleLog).toHaveBeenCalled();
   });
 });
 
@@ -258,5 +281,86 @@ describe('effect', () => {
     expect(effectPairs[0].cleanup).toBeCalledTimes(1);
     expect(effectPairs[1].effect).toBeCalledTimes(1);
     expect(effectPairs[1].cleanup).toBeCalledTimes(1);
+  });
+});
+
+describe('useWatchEffect', () => {
+  it('is reactive', () => {
+    const counter = ref(1);
+    const effectFn = jest.fn();
+
+    const { unmount } = renderHook(() =>
+      useWatchEffect(() => {
+        effectFn(counter.value);
+      })
+    );
+
+    expect(effectFn).toBeCalledTimes(1);
+
+    act(() => {
+      counter.value++;
+    });
+
+    expect(effectFn).toBeCalledTimes(2);
+
+    unmount();
+    act(() => {
+      counter.value++;
+    });
+
+    expect(effectFn).toBeCalledTimes(2);
+  });
+  it('keeps the same instance across re-render', () => {
+    const counter = ref(1);
+    const effectFn = jest.fn();
+
+    const { rerender, unmount } = renderHook(() =>
+      useWatchEffect(() => {
+        effectFn(counter.value);
+      })
+    );
+
+    expect(effectFn).toBeCalledTimes(1);
+
+    rerender();
+
+    expect(effectFn).toBeCalledTimes(1);
+
+    unmount();
+    act(() => {
+      counter.value++;
+    });
+
+    expect(effectFn).toBeCalledTimes(1);
+  });
+  it('cleans up without effect scope', () => {
+    const counter = ref(1);
+    const effectFn = jest.fn();
+    const cleanupFn = jest.fn();
+
+    const { unmount } = renderHook(() =>
+      useWatchEffect(() => {
+        effectFn(counter.value);
+        return cleanupFn;
+      })
+    );
+
+    expect(effectFn).toBeCalledTimes(1);
+    expect(cleanupFn).toBeCalledTimes(0);
+
+    act(() => {
+      counter.value++;
+    });
+
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(1);
+
+    unmount();
+
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(2);
+
+    // expect the hook to warn about using it inside a component that is not wrapped by makeReactive
+    expect(consoleLog).toHaveBeenCalled();
   });
 });

@@ -431,9 +431,6 @@ export const watch: WatchOverloads = <
 ): WatchStopHandle => {
   let deep = options?.deep ?? false;
   const immediate = options?.immediate ?? false;
-  const onTrack = options?.onTrack ?? undefined;
-  const onTrigger = options?.onTrigger ?? undefined;
-  const onStop = options?.onStop ?? undefined;
 
   let getter: () => any;
   let isMultiSource = false;
@@ -498,9 +495,9 @@ export const watch: WatchOverloads = <
   effect = internalEffect(getter, {
     scheduler: job,
     allowRecurse: true,
-    onTrack,
-    onTrigger,
-    onStop,
+    onTrack: options?.onTrack,
+    onTrigger: options?.onTrigger,
+    onStop: options?.onStop,
   });
   if (immediate) {
     job();

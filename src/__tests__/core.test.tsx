@@ -636,6 +636,60 @@ describe('watch', () => {
 
     expect(effectFn).toBeCalledTimes(1);
   });
+  it('warns about invalid source', () => {
+    const obj = { nested: { a: 1 } };
+    const effectFn = jest.fn();
+
+    const runner = watch(obj, (...args) => {
+      effectFn(...args);
+    });
+
+    expect(effectFn).toBeCalledTimes(0);
+
+    obj.nested.a++;
+
+    expect(effectFn).toBeCalledTimes(0);
+
+    runner();
+    obj.nested.a++;
+
+    expect(effectFn).toBeCalledTimes(0);
+
+    expect(consoleWarn).toBeCalled();
+  });
+  it('warns about invalid source in array', () => {
+    const counter = ref(1);
+    const obj = { a: 1, nested: { b: 2 } };
+    const obj2 = reactive({ a: 1, nested: { b: 2 } });
+    const effectFn = jest.fn();
+
+    const runner = watch([counter, obj, () => obj2.a], (...args) => {
+      effectFn(...args);
+    });
+
+    expect(effectFn).toBeCalledTimes(0);
+
+    counter.value++;
+
+    expect(effectFn).toBeCalledTimes(1);
+    expect(effectFn).toBeCalledWith([2, obj, 1], [1, obj, 1]);
+
+    obj.nested.b++;
+
+    expect(effectFn).toBeCalledTimes(1);
+
+    obj2.a++;
+
+    expect(effectFn).toBeCalledTimes(2);
+    expect(effectFn).toBeCalledWith([2, obj, 2], [2, obj, 1]);
+
+    runner();
+    obj.nested.b++;
+
+    expect(effectFn).toBeCalledTimes(2);
+
+    expect(consoleWarn).toBeCalled();
+  });
 });
 
 describe('useWatch', () => {

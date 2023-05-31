@@ -18,9 +18,11 @@ import 'jest-performance-testing';
 import { renderHook, act } from '@testing-library/react';
 
 let consoleLog: jest.SpyInstance;
+let consoleWarn: jest.SpyInstance;
 
 beforeEach(() => {
   consoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
+  consoleWarn = jest.spyOn(console, 'warn').mockImplementation(() => {});
 });
 
 afterEach(() => {
@@ -365,6 +367,38 @@ describe('useWatchEffect', () => {
 
     // expect the hook to warn about using it inside a component that is not wrapped by makeReactive
     expect(consoleLog).toHaveBeenCalled();
+  });
+  it('rejects lazy option', () => {
+    const counter = ref(1);
+    const effectFn = jest.fn();
+
+    const { unmount } = renderHook(() =>
+      useWatchEffect(
+        () => {
+          effectFn(counter.value);
+        },
+        // @ts-ignore
+        { lazy: true }
+      )
+    );
+
+    expect(effectFn).toBeCalledTimes(1);
+
+    act(() => {
+      counter.value++;
+    });
+
+    expect(effectFn).toBeCalledTimes(2);
+
+    unmount();
+    act(() => {
+      counter.value++;
+    });
+
+    expect(effectFn).toBeCalledTimes(2);
+
+    // should warn about the lazy option
+    expect(consoleWarn).toBeCalled();
   });
 });
 

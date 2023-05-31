@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import {
+  effect,
   isReactive,
   isReadonly,
   isRef,
@@ -159,5 +160,103 @@ describe('useReadonly', () => {
     expect(result.current).toEqual({ a: 1, b: 2 });
     expect(initializer).toBeCalledTimes(1);
     expect(result.current).toBe(ref);
+  });
+});
+
+describe('effect', () => {
+  it('is reactive', () => {
+    const counter = ref(1);
+    const effectFn = jest.fn();
+
+    const runner = effect(() => {
+      effectFn(counter.value);
+    });
+
+    expect(effectFn).toBeCalledTimes(1);
+
+    counter.value++;
+
+    expect(effectFn).toBeCalledTimes(2);
+
+    runner.effect.stop();
+    counter.value++;
+
+    expect(effectFn).toBeCalledTimes(2);
+  });
+  it('calls onStop function', () => {
+    const counter = ref(1);
+    const effectFn = jest.fn();
+    const cleanupFn = jest.fn();
+    const stopFn = jest.fn();
+
+    const runner = effect(
+      () => {
+        effectFn(counter.value);
+        return cleanupFn;
+      },
+      { onStop: stopFn }
+    );
+
+    expect(stopFn).toBeCalledTimes(0);
+    expect(cleanupFn).toBeCalledTimes(0);
+
+    runner.effect.stop();
+
+    expect(stopFn).toBeCalledTimes(1);
+    expect(cleanupFn).toBeCalledTimes(1);
+  });
+  it('cleans up properly', () => {
+    const counter = ref(1);
+    const effectFn = jest.fn();
+    const cleanupFn = jest.fn();
+
+    const runner = effect(() => {
+      effectFn(counter.value);
+      return cleanupFn;
+    });
+
+    expect(effectFn).toBeCalledTimes(1);
+    expect(cleanupFn).toBeCalledTimes(0);
+
+    counter.value++;
+
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(1);
+
+    runner.effect.stop();
+
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(2);
+  });
+  it('maintains correct cleanup function instance', () => {
+    const counter = ref(0);
+    const effectPairs = [
+      { effect: jest.fn(), cleanup: jest.fn() },
+      { effect: jest.fn(), cleanup: jest.fn() },
+    ];
+
+    const runner = effect(() => {
+      effectPairs[counter.value].effect();
+      return effectPairs[counter.value].cleanup;
+    });
+
+    expect(effectPairs[0].effect).toBeCalledTimes(1);
+    expect(effectPairs[0].cleanup).toBeCalledTimes(0);
+    expect(effectPairs[1].effect).toBeCalledTimes(0);
+    expect(effectPairs[1].cleanup).toBeCalledTimes(0);
+
+    counter.value++;
+
+    expect(effectPairs[0].effect).toBeCalledTimes(1);
+    expect(effectPairs[0].cleanup).toBeCalledTimes(1);
+    expect(effectPairs[1].effect).toBeCalledTimes(1);
+    expect(effectPairs[1].cleanup).toBeCalledTimes(0);
+
+    runner.effect.stop();
+
+    expect(effectPairs[0].effect).toBeCalledTimes(1);
+    expect(effectPairs[0].cleanup).toBeCalledTimes(1);
+    expect(effectPairs[1].effect).toBeCalledTimes(1);
+    expect(effectPairs[1].cleanup).toBeCalledTimes(1);
   });
 });

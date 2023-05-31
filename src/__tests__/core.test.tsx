@@ -4,12 +4,15 @@ import {
   isReactive,
   isReadonly,
   isRef,
+  reactive,
   ref,
   useComputed,
   useReactive,
   useReadonly,
   useReference,
+  useWatch,
   useWatchEffect,
+  watch,
 } from '..';
 import 'jest-performance-testing';
 import { renderHook, act } from '@testing-library/react';
@@ -343,6 +346,331 @@ describe('useWatchEffect', () => {
         effectFn(counter.value);
         return cleanupFn;
       })
+    );
+
+    expect(effectFn).toBeCalledTimes(1);
+    expect(cleanupFn).toBeCalledTimes(0);
+
+    act(() => {
+      counter.value++;
+    });
+
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(1);
+
+    unmount();
+
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(2);
+
+    // expect the hook to warn about using it inside a component that is not wrapped by makeReactive
+    expect(consoleLog).toHaveBeenCalled();
+  });
+});
+
+describe('watch', () => {
+  it('is reactive with ref', () => {
+    const counter = ref(1);
+    const effectFn = jest.fn();
+
+    const runner = watch(counter, (...args) => {
+      effectFn(...args);
+    });
+
+    expect(effectFn).toBeCalledTimes(0);
+
+    counter.value++;
+
+    expect(effectFn).toBeCalledTimes(1);
+    expect(effectFn).toBeCalledWith(2, 1);
+
+    runner();
+    counter.value++;
+
+    expect(effectFn).toBeCalledTimes(1);
+  });
+  it('is reactive with reactive object', () => {
+    const obj = reactive({ a: 1, nested: { b: 2 } });
+    const effectFn = jest.fn();
+
+    const runner = watch(obj, (...args) => {
+      effectFn(...args);
+    });
+
+    expect(effectFn).toBeCalledTimes(0);
+
+    obj.nested.b++;
+
+    expect(effectFn).toBeCalledTimes(1);
+    expect(effectFn).toBeCalledWith(obj, obj);
+
+    runner();
+    obj.nested.b++;
+
+    expect(effectFn).toBeCalledTimes(1);
+  });
+  it('is reactive with compound getter function', () => {
+    const counter = ref(1);
+    const obj = reactive({ a: 1, nested: { b: 2 } });
+    const effectFn = jest.fn();
+
+    const runner = watch(
+      () => counter.value + obj.nested.b,
+      (...args) => {
+        effectFn(...args);
+      }
+    );
+
+    expect(effectFn).toBeCalledTimes(0);
+
+    obj.nested.b++;
+
+    expect(effectFn).toBeCalledTimes(1);
+    expect(effectFn).toBeCalledWith(4, 3);
+
+    counter.value++;
+
+    expect(effectFn).toBeCalledTimes(2);
+    expect(effectFn).toBeCalledWith(5, 4);
+
+    runner();
+    obj.nested.b++;
+
+    expect(effectFn).toBeCalledTimes(2);
+  });
+  it('is reactive with array of sources', () => {
+    const counter = ref(1);
+    const obj = reactive({ a: 1, nested: { b: 2 } });
+    const obj2 = reactive({ a: 1, nested: { b: 2 } });
+    const effectFn = jest.fn();
+
+    const runner = watch([counter, obj, () => obj2.a], (...args) => {
+      effectFn(...args);
+    });
+
+    expect(effectFn).toBeCalledTimes(0);
+
+    counter.value++;
+
+    expect(effectFn).toBeCalledTimes(1);
+    expect(effectFn).toBeCalledWith([2, obj, 1], [1, obj, 1]);
+
+    obj.nested.b++;
+
+    expect(effectFn).toBeCalledTimes(2);
+    expect(effectFn).toBeCalledWith([2, obj, 1], [2, obj, 1]);
+
+    obj2.a++;
+
+    expect(effectFn).toBeCalledTimes(3);
+    expect(effectFn).toBeCalledWith([2, obj, 2], [2, obj, 1]);
+
+    runner();
+    obj.nested.b++;
+
+    expect(effectFn).toBeCalledTimes(3);
+  });
+  it('cleans up properly', () => {
+    const counter = ref(1);
+    const effectFn = jest.fn();
+    const cleanupFn = jest.fn();
+
+    const runner = watch(counter, () => {
+      effectFn(counter.value);
+      return cleanupFn;
+    });
+
+    expect(effectFn).toBeCalledTimes(0);
+    expect(cleanupFn).toBeCalledTimes(0);
+
+    counter.value++;
+
+    expect(effectFn).toBeCalledTimes(1);
+    expect(cleanupFn).toBeCalledTimes(0);
+
+    counter.value++;
+
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(1);
+
+    runner();
+
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(2);
+  });
+  it('maintains correct cleanup function instance', () => {
+    const counter = ref(-1);
+    const effectPairs = [
+      { effect: jest.fn(), cleanup: jest.fn() },
+      { effect: jest.fn(), cleanup: jest.fn() },
+    ];
+
+    const runner = watch(counter, () => {
+      effectPairs[counter.value].effect();
+      return effectPairs[counter.value].cleanup;
+    });
+
+    counter.value++;
+
+    expect(effectPairs[0].effect).toBeCalledTimes(1);
+    expect(effectPairs[0].cleanup).toBeCalledTimes(0);
+    expect(effectPairs[1].effect).toBeCalledTimes(0);
+    expect(effectPairs[1].cleanup).toBeCalledTimes(0);
+
+    counter.value++;
+
+    expect(effectPairs[0].effect).toBeCalledTimes(1);
+    expect(effectPairs[0].cleanup).toBeCalledTimes(1);
+    expect(effectPairs[1].effect).toBeCalledTimes(1);
+    expect(effectPairs[1].cleanup).toBeCalledTimes(0);
+
+    runner();
+
+    expect(effectPairs[0].effect).toBeCalledTimes(1);
+    expect(effectPairs[0].cleanup).toBeCalledTimes(1);
+    expect(effectPairs[1].effect).toBeCalledTimes(1);
+    expect(effectPairs[1].cleanup).toBeCalledTimes(1);
+  });
+  it('works with immediate option', () => {
+    const counter = ref(1);
+    const effectFn = jest.fn();
+
+    const runner = watch(
+      counter,
+      (...args) => {
+        effectFn(...args);
+      },
+      { immediate: true }
+    );
+
+    expect(effectFn).toBeCalledTimes(1);
+    expect(effectFn).toBeCalledWith(1, undefined);
+
+    counter.value++;
+
+    expect(effectFn).toBeCalledTimes(2);
+    expect(effectFn).toBeCalledWith(2, 1);
+
+    runner();
+    counter.value++;
+
+    expect(effectFn).toBeCalledTimes(2);
+  });
+  it('works with deep option (deep: false)', () => {
+    const obj = reactive({ nested: { a: 1 } });
+    const effectFn = jest.fn();
+
+    const runner = watch(
+      () => obj,
+      (...args) => {
+        effectFn(...args);
+      }
+    );
+
+    expect(effectFn).toBeCalledTimes(0);
+
+    obj.nested.a++;
+
+    expect(effectFn).toBeCalledTimes(0);
+
+    runner();
+    obj.nested.a++;
+
+    expect(effectFn).toBeCalledTimes(0);
+  });
+  it('works with deep option (deep: true)', () => {
+    const obj = reactive({ nested: { a: 1 } });
+    const effectFn = jest.fn();
+
+    const runner = watch(
+      () => obj,
+      (...args) => {
+        effectFn(...args);
+      },
+      { deep: true }
+    );
+
+    expect(effectFn).toBeCalledTimes(0);
+
+    obj.nested.a++;
+
+    expect(effectFn).toBeCalledTimes(1);
+    expect(effectFn).toBeCalledWith(obj, obj);
+
+    runner();
+    obj.nested.a++;
+
+    expect(effectFn).toBeCalledTimes(1);
+  });
+});
+
+describe('useWatch', () => {
+  it('is reactive', () => {
+    const counter = ref(1);
+    const effectFn = jest.fn();
+
+    const { unmount } = renderHook(() =>
+      useWatch(counter, (...args) => {
+        effectFn(...args);
+      })
+    );
+
+    expect(effectFn).toBeCalledTimes(0);
+
+    act(() => {
+      counter.value++;
+    });
+
+    expect(effectFn).toBeCalledTimes(1);
+
+    unmount();
+    act(() => {
+      counter.value++;
+    });
+
+    expect(effectFn).toBeCalledTimes(1);
+  });
+  it('keeps the same instance across re-render', () => {
+    const counter = ref(1);
+    const effectFn = jest.fn();
+
+    const { rerender, unmount } = renderHook(() =>
+      useWatch(
+        counter,
+        (...args) => {
+          effectFn(...args);
+        },
+        { immediate: true }
+      )
+    );
+
+    expect(effectFn).toBeCalledTimes(1);
+
+    rerender();
+
+    expect(effectFn).toBeCalledTimes(1);
+
+    unmount();
+    act(() => {
+      counter.value++;
+    });
+
+    expect(effectFn).toBeCalledTimes(1);
+  });
+  it('cleans up without effect scope', () => {
+    const counter = ref(1);
+    const effectFn = jest.fn();
+    const cleanupFn = jest.fn();
+
+    const { unmount } = renderHook(() =>
+      useWatch(
+        counter,
+        (...args) => {
+          effectFn(...args);
+          return cleanupFn;
+        },
+        { immediate: true }
+      )
     );
 
     expect(effectFn).toBeCalledTimes(1);

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.4.2](https://github.com/hlysine/reactive/compare/v0.4.1...v0.4.2) (2023-05-31)
+
+
+### Features
+
+* add onStop option to watch ([8ad1d99](https://github.com/hlysine/reactive/commit/8ad1d99b601b31e3da7b0d56370c0a43c127d21a))
+* re-export isShallow utility ([a1aa3b5](https://github.com/hlysine/reactive/commit/a1aa3b5512ac73f07584be7d90091f2a3b4716d3))
+
+
+### Bug Fixes
+
+* change some safe navigation to null assertions ([2324272](https://github.com/hlysine/reactive/commit/23242729a0125409131a3289ad490750b6f94830))
+* reject lazy option for useWatch as well ([4f14ef7](https://github.com/hlysine/reactive/commit/4f14ef7c8b9537d3f541874e750dcaa71a58acac))
+* remove unreachable code branches ([30c4de1](https://github.com/hlysine/reactive/commit/30c4de127a080c329d4d048a055eb9fafc47d0af))
+
 ## [0.4.1](https://github.com/hlysine/reactive/compare/v0.4.0...v0.4.1) (2023-05-26)
 
 

@@ -586,9 +586,15 @@ export const useWatch: UseWatchOverloads = <
   cb: WatchCallback<MapSources<T, false>, MapSources<T, Immediate>>,
   options?: WatchOptions<Immediate>
 ): void => {
+  if (options && 'lazy' in options && options.lazy) {
+    messages.warnLazyWatch();
+  }
   const reactiveRef = useRef<WatchStopHandle | null>(null);
   if (reactiveRef.current === null) {
-    reactiveRef.current = watch(sources, cb, options);
+    reactiveRef.current = watch(sources, cb, {
+      ...options,
+      lazy: false,
+    } as WatchOptions<Immediate>);
     if (getCurrentScope() !== undefined) {
       onScopeDispose(() => {
         reactiveRef.current = null;

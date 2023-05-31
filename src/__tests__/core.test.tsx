@@ -377,7 +377,7 @@ describe('useWatchEffect', () => {
         () => {
           effectFn(counter.value);
         },
-        // @ts-ignore
+        // @ts-expect-error - lazy is not a valid option
         { lazy: true }
       )
     );
@@ -724,5 +724,37 @@ describe('useWatch', () => {
 
     // expect the hook to warn about using it inside a component that is not wrapped by makeReactive
     expect(consoleLog).toHaveBeenCalled();
+  });
+  it('is reactive', () => {
+    const counter = ref(1);
+    const effectFn = jest.fn();
+
+    const { unmount } = renderHook(() =>
+      useWatch(
+        counter,
+        (...args) => {
+          effectFn(...args);
+        },
+        // @ts-expect-error - lazy is not a valid option
+        { lazy: true }
+      )
+    );
+
+    expect(effectFn).toBeCalledTimes(0);
+
+    act(() => {
+      counter.value++;
+    });
+
+    expect(effectFn).toBeCalledTimes(1);
+
+    unmount();
+    act(() => {
+      counter.value++;
+    });
+
+    expect(effectFn).toBeCalledTimes(1);
+
+    expect(consoleWarn).toBeCalled();
   });
 });

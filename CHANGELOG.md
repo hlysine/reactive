@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/hlysine/reactive/compare/v0.4.2...v0.4.3) (2023-05-31)
+
+
+### Bug Fixes
+
+* fix makeReactive types to accept components with props ([e78acf4](https://github.com/hlysine/reactive/commit/e78acf428b047d123419bb8d8cae227be789be53))
+
 ## [0.4.2](https://github.com/hlysine/reactive/compare/v0.4.1...v0.4.2) (2023-05-31)
 
 

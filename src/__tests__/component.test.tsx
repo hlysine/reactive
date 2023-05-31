@@ -1,7 +1,14 @@
 import React from 'react';
 import { act, render } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { makeReactive, reactive, ref, useComputed, useWatchEffect } from '..';
+import {
+  makeReactive,
+  reactive,
+  ref,
+  useComputed,
+  useWatch,
+  useWatchEffect,
+} from '..';
 import { perf, wait } from 'react-performance-testing';
 import 'jest-performance-testing';
 
@@ -150,12 +157,22 @@ describe('makeReactive', () => {
 
     const mockEffect = jest.fn();
     const mockCleanup = jest.fn();
+    const mockEffect2 = jest.fn();
+    const mockCleanup2 = jest.fn();
     const mockGetter = jest.fn(() => count.value + 1);
     const Tester = makeReactive(function Tester() {
       useWatchEffect(() => {
         mockEffect(count.value);
         return mockCleanup;
       });
+      useWatch(
+        count,
+        (...args) => {
+          mockEffect2(...args);
+          return mockCleanup2;
+        },
+        { immediate: true }
+      );
       const derived = useComputed(mockGetter);
       return <p>{derived.value}</p>;
     });
@@ -164,6 +181,8 @@ describe('makeReactive', () => {
 
     expect(mockEffect).toBeCalledTimes(1);
     expect(mockCleanup).toBeCalledTimes(0);
+    expect(mockEffect2).toBeCalledTimes(1);
+    expect(mockCleanup2).toBeCalledTimes(0);
     expect(mockGetter).toBeCalledTimes(1);
     const content1 = await findByText('1');
     expect(content1).toBeTruthy();
@@ -174,6 +193,8 @@ describe('makeReactive', () => {
 
     expect(mockEffect).toBeCalledTimes(2);
     expect(mockCleanup).toBeCalledTimes(1);
+    expect(mockEffect2).toBeCalledTimes(2);
+    expect(mockCleanup2).toBeCalledTimes(1);
     expect(mockGetter).toBeCalledTimes(2);
     const content2 = await findByText('2');
     expect(content2).toBeTruthy();
@@ -182,6 +203,8 @@ describe('makeReactive', () => {
 
     expect(mockEffect).toBeCalledTimes(2);
     expect(mockCleanup).toBeCalledTimes(2);
+    expect(mockEffect2).toBeCalledTimes(2);
+    expect(mockCleanup2).toBeCalledTimes(2);
     expect(mockGetter).toBeCalledTimes(2);
 
     act(() => {
@@ -190,6 +213,8 @@ describe('makeReactive', () => {
 
     expect(mockEffect).toBeCalledTimes(2);
     expect(mockCleanup).toBeCalledTimes(2);
+    expect(mockEffect2).toBeCalledTimes(2);
+    expect(mockCleanup2).toBeCalledTimes(2);
     expect(mockGetter).toBeCalledTimes(2);
   });
   it('stops reactive effects on unmount (Strict Mode)', async () => {
@@ -197,12 +222,22 @@ describe('makeReactive', () => {
 
     const mockEffect = jest.fn();
     const mockCleanup = jest.fn();
+    const mockEffect2 = jest.fn();
+    const mockCleanup2 = jest.fn();
     const mockGetter = jest.fn(() => count.value + 1);
     const Tester = makeReactive(function Tester() {
       useWatchEffect(() => {
         mockEffect(count.value);
         return mockCleanup;
       });
+      useWatch(
+        count,
+        (...args) => {
+          mockEffect2(...args);
+          return mockCleanup2;
+        },
+        { immediate: true }
+      );
       const derived = useComputed(mockGetter);
       return <p>{derived.value}</p>;
     });
@@ -215,6 +250,8 @@ describe('makeReactive', () => {
 
     expect(mockEffect).toBeCalledTimes(3);
     expect(mockCleanup).toBeCalledTimes(2);
+    expect(mockEffect2).toBeCalledTimes(3);
+    expect(mockCleanup2).toBeCalledTimes(2);
     expect(mockGetter).toBeCalledTimes(3);
     const content1 = await findByText('1');
     expect(content1).toBeTruthy();
@@ -225,6 +262,8 @@ describe('makeReactive', () => {
 
     expect(mockEffect).toBeCalledTimes(4);
     expect(mockCleanup).toBeCalledTimes(3);
+    expect(mockEffect2).toBeCalledTimes(4);
+    expect(mockCleanup2).toBeCalledTimes(3);
     expect(mockGetter).toBeCalledTimes(4);
     const content2 = await findByText('2');
     expect(content2).toBeTruthy();
@@ -233,6 +272,8 @@ describe('makeReactive', () => {
 
     expect(mockEffect).toBeCalledTimes(4);
     expect(mockCleanup).toBeCalledTimes(4);
+    expect(mockEffect2).toBeCalledTimes(4);
+    expect(mockCleanup2).toBeCalledTimes(4);
     expect(mockGetter).toBeCalledTimes(4);
 
     act(() => {
@@ -241,6 +282,8 @@ describe('makeReactive', () => {
 
     expect(mockEffect).toBeCalledTimes(4);
     expect(mockCleanup).toBeCalledTimes(4);
+    expect(mockEffect2).toBeCalledTimes(4);
+    expect(mockCleanup2).toBeCalledTimes(4);
     expect(mockGetter).toBeCalledTimes(4);
   });
 });

@@ -690,6 +690,39 @@ describe('watch', () => {
 
     expect(consoleWarn).toBeCalled();
   });
+  it('traverses complex object', () => {
+    const obj = reactive({
+      a: 1,
+      nested: { b: 2 },
+      nested2: { b: 2 },
+      r: ref(2),
+      values: [{ a: 1 }, { a: 2 }, ref(5)],
+      set: new Set([{ a: 1 }, { a: 2 }]),
+      map: new Map([
+        ['a', 1],
+        ['b', 2],
+      ]),
+    });
+    obj.nested2 = obj.nested;
+
+    const effectFn = jest.fn();
+
+    const runner = watch(obj, (...args) => {
+      effectFn(...args);
+    });
+
+    expect(effectFn).toBeCalledTimes(0);
+
+    obj.nested.b++;
+
+    expect(effectFn).toBeCalledTimes(1);
+    expect(effectFn).toBeCalledWith(obj, obj);
+
+    runner();
+    obj.nested.b++;
+
+    expect(effectFn).toBeCalledTimes(1);
+  });
 });
 
 describe('useWatch', () => {

@@ -44,6 +44,19 @@ describe('makeReactive', () => {
     const content = await findByText('Test component');
     expect(content).toBeTruthy();
   });
+  it('updates props', async () => {
+    const Tester = makeReactive(function Tester({ value }: { value: string }) {
+      return <p>{value}</p>;
+    });
+
+    const { findByText, rerender } = render(<Tester value="Test component" />);
+    const content = await findByText('Test component');
+    expect(content).toBeTruthy();
+
+    rerender(<Tester value="Test component 2" />);
+    const content2 = await findByText('Test component 2');
+    expect(content2).toBeTruthy();
+  });
   it('re-renders when ref changes', async () => {
     const count = ref(0);
     const Tester = makeReactive(function Tester() {

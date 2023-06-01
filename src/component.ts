@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from 'react';
 interface ComponentReactivity {
   scope: EffectScope;
   effect: ReactiveEffectRunner;
+  args: [props: any, ctx?: any];
 }
 
 const renderedComponents = new WeakMap<any, ComponentReactivity>();
@@ -46,7 +47,7 @@ const renderedComponents = new WeakMap<any, ComponentReactivity>();
 export const makeReactive = <P extends {}>(
   component: React.FC<P>
 ): React.FC<P> => {
-  const ReactiveFC: React.FC<P> = (props, ctx) => {
+  const ReactiveFC: React.FC<P> = (...args) => {
     const reactivityRef = useRef<ComponentReactivity | null>(null);
     const [, setTick] = useState(0);
     const rerender = () => setTick((v) => v + 1);
@@ -55,13 +56,17 @@ export const makeReactive = <P extends {}>(
       if (reactivityRef.current === null) {
         const scope = effectScope();
         scope.run(() => {
-          const runner = effect(() => component(props, ctx), {
-            lazy: true,
-            scheduler: rerender,
-          });
+          const runner = effect(
+            () => component(...reactivityRef.current!.args),
+            {
+              lazy: true,
+              scheduler: rerender,
+            }
+          );
           reactivityRef.current = {
             scope,
             effect: runner,
+            args,
           };
         });
         if (requiresRerender) {
@@ -96,6 +101,7 @@ export const makeReactive = <P extends {}>(
       renderedComponents.set(fiber, reactivityRef.current!);
     }
 
+    reactivityRef.current!.args = args;
     return reactivityRef.current!.scope.run(() =>
       reactivityRef.current!.effect()
     );

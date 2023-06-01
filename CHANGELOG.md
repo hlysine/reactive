@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.4](https://github.com/hlysine/reactive/compare/v0.4.3...v0.4.4) (2023-06-01)
+
+
+### Bug Fixes
+
+* makeReactive not updating props on rerender ([623bc6f](https://github.com/hlysine/reactive/commit/623bc6f16e4fdaccc3ea4a68af7c814f66bbee4c))
+
 ## [0.4.3](https://github.com/hlysine/reactive/compare/v0.4.2...v0.4.3) (2023-05-31)
 
 

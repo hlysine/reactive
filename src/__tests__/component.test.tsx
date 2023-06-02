@@ -11,6 +11,19 @@ import {
 } from '..';
 import { perf, wait } from 'react-performance-testing';
 import 'jest-performance-testing';
+import * as helper from '../helper';
+
+let getFiberInDev: jest.SpyInstance;
+
+beforeEach(() => {
+  // mock getFiberInDev to simulate React production mode
+  getFiberInDev = jest.spyOn(helper, 'getFiberInDev').mockReturnValue(null);
+});
+
+afterEach(() => {
+  jest.resetAllMocks();
+  jest.restoreAllMocks();
+});
 
 describe('makeReactive', () => {
   it('renders without crashing', async () => {
@@ -252,7 +265,76 @@ describe('makeReactive', () => {
     expect(mockCleanup2).toBeCalledTimes(2);
     expect(mockGetter).toBeCalledTimes(2);
   });
+  it('stops reactive effects on unmount (Dev Mode)', async () => {
+    // use orginal return value to restore React development mode
+    getFiberInDev.mockRestore();
+    const count = ref(0);
+
+    const mockEffect = jest.fn();
+    const mockCleanup = jest.fn();
+    const mockEffect2 = jest.fn();
+    const mockCleanup2 = jest.fn();
+    const mockGetter = jest.fn(() => count.value + 1);
+    const Tester = makeReactive(function Tester() {
+      useWatchEffect(() => {
+        mockEffect(count.value);
+        return mockCleanup;
+      });
+      useWatch(
+        count,
+        (...args) => {
+          mockEffect2(...args);
+          return mockCleanup2;
+        },
+        { immediate: true }
+      );
+      const derived = useComputed(mockGetter);
+      return <p>{derived.value}</p>;
+    });
+
+    const { unmount, findByText } = render(<Tester />);
+
+    expect(mockEffect).toBeCalledTimes(2);
+    expect(mockCleanup).toBeCalledTimes(1);
+    expect(mockEffect2).toBeCalledTimes(2);
+    expect(mockCleanup2).toBeCalledTimes(1);
+    expect(mockGetter).toBeCalledTimes(2);
+    const content1 = await findByText('1');
+    expect(content1).toBeTruthy();
+
+    act(() => {
+      count.value++;
+    });
+
+    expect(mockEffect).toBeCalledTimes(3);
+    expect(mockCleanup).toBeCalledTimes(2);
+    expect(mockEffect2).toBeCalledTimes(3);
+    expect(mockCleanup2).toBeCalledTimes(2);
+    expect(mockGetter).toBeCalledTimes(3);
+    const content2 = await findByText('2');
+    expect(content2).toBeTruthy();
+
+    unmount();
+
+    expect(mockEffect).toBeCalledTimes(3);
+    expect(mockCleanup).toBeCalledTimes(3);
+    expect(mockEffect2).toBeCalledTimes(3);
+    expect(mockCleanup2).toBeCalledTimes(3);
+    expect(mockGetter).toBeCalledTimes(3);
+
+    act(() => {
+      count.value++;
+    });
+
+    expect(mockEffect).toBeCalledTimes(3);
+    expect(mockCleanup).toBeCalledTimes(3);
+    expect(mockEffect2).toBeCalledTimes(3);
+    expect(mockCleanup2).toBeCalledTimes(3);
+    expect(mockGetter).toBeCalledTimes(3);
+  });
   it('stops reactive effects on unmount (Strict Mode)', async () => {
+    // use orginal return value to restore React development mode
+    getFiberInDev.mockRestore();
     const count = ref(0);
 
     const mockEffect = jest.fn();

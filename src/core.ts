@@ -116,28 +116,39 @@ export const useComputed: UseComputed = (<T>(
   const reactiveRef = useRef<ComputedRef<T> | WritableComputedRef<T> | null>(
     null
   );
-  if (reactiveRef.current === null) {
-    reactiveRef.current = computed(optionsOrGetter as any, debugOptions);
-    if (getCurrentScope() !== undefined) {
-      onScopeDispose(() => {
-        reactiveRef.current = null;
-      });
-    } else if (getFiberInDev() !== null) {
-      messages.warnNotInMakeReactive('useComputed');
+  let cachedRef: ComputedRef<T> | WritableComputedRef<T> | null = null;
+  const destroyRef = () => {
+    if (reactiveRef.current !== null) {
+      reactiveRef.current.effect.stop();
+      reactiveRef.current = null;
     }
-  }
+  };
+  const initializeRef = (inRender: boolean) => {
+    if (reactiveRef.current === null) {
+      reactiveRef.current = computed(optionsOrGetter as any, debugOptions);
+      if (getCurrentScope() !== undefined) {
+        onScopeDispose(() => {
+          reactiveRef.current = null;
+        });
+      } else if (inRender && getFiberInDev() !== null) {
+        cachedRef = reactiveRef.current;
+        setTimeout(() => cachedRef!.effect.stop(), 0);
+        reactiveRef.current = null;
+      }
+    }
+  };
+  initializeRef(true);
   if (getCurrentScope() === undefined) {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
+      initializeRef(false);
       return () => {
-        if (reactiveRef.current !== null) {
-          reactiveRef.current.effect.stop();
-          reactiveRef.current = null;
-        }
+        destroyRef();
       };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
   }
-  return reactiveRef.current;
+  return cachedRef ?? reactiveRef.current!;
 }) as UseComputed;
 
 /**
@@ -309,25 +320,33 @@ export const useWatchEffect = (
     messages.warnLazyWatchEffect();
   }
   const reactiveRef = useRef<ReactiveEffectRunner | null>(null);
-  if (reactiveRef.current === null) {
-    reactiveRef.current = effect(fn, { ...options, lazy: false });
-    if (getCurrentScope() !== undefined) {
-      onScopeDispose(() => {
-        reactiveRef.current = null;
-      });
-    } else if (getFiberInDev() !== null) {
-      messages.warnNotInMakeReactive('useWatchEffect');
+  const destroyRef = () => {
+    if (reactiveRef.current !== null) {
+      reactiveRef.current.effect.stop();
+      reactiveRef.current = null;
     }
-  }
+  };
+  const initializeRef = (inRender: boolean) => {
+    if (reactiveRef.current === null) {
+      reactiveRef.current = effect(fn, { ...options, lazy: false });
+      if (getCurrentScope() !== undefined) {
+        onScopeDispose(() => {
+          reactiveRef.current = null;
+        });
+      } else if (inRender && getFiberInDev() !== null) {
+        destroyRef();
+      }
+    }
+  };
+  initializeRef(true);
   if (getCurrentScope() === undefined) {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
+      initializeRef(false);
       return () => {
-        if (reactiveRef.current !== null) {
-          reactiveRef.current.effect.stop();
-          reactiveRef.current = null;
-        }
+        destroyRef();
       };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
   }
 };
@@ -596,28 +615,36 @@ export const useWatch: UseWatchOverloads = <
     messages.warnLazyWatch();
   }
   const reactiveRef = useRef<WatchStopHandle | null>(null);
-  if (reactiveRef.current === null) {
-    reactiveRef.current = watch(sources, cb, {
-      ...options,
-      lazy: false,
-    } as WatchOptions<Immediate>);
-    if (getCurrentScope() !== undefined) {
-      onScopeDispose(() => {
-        reactiveRef.current = null;
-      });
-    } else if (getFiberInDev() !== null) {
-      messages.warnNotInMakeReactive('useWatch');
+  const destroyRef = () => {
+    if (reactiveRef.current !== null) {
+      reactiveRef.current();
+      reactiveRef.current = null;
     }
-  }
+  };
+  const initializeRef = (inRender: boolean) => {
+    if (reactiveRef.current === null) {
+      reactiveRef.current = watch(sources, cb, {
+        ...options,
+        lazy: false,
+      } as WatchOptions<Immediate>);
+      if (getCurrentScope() !== undefined) {
+        onScopeDispose(() => {
+          reactiveRef.current = null;
+        });
+      } else if (inRender && getFiberInDev() !== null) {
+        destroyRef();
+      }
+    }
+  };
+  initializeRef(true);
   if (getCurrentScope() === undefined) {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
+      initializeRef(false);
       return () => {
-        if (reactiveRef.current !== null) {
-          reactiveRef.current();
-          reactiveRef.current = null;
-        }
+        destroyRef();
       };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
   }
 };

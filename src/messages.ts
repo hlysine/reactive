@@ -19,13 +19,6 @@ const messages = {
       'A watch source can only be a getter/effect function, a ref, a reactive object, or an array of these types.'
     );
   },
-  warnNotInMakeReactive(hookName: string) {
-    console.log(
-      `${hookName} is called in a component not wrapped by makeReactive. ` +
-        'Reactive hooks that register a side effect should be called in a makeReactive component to be compatible with React strict mode during development. ' +
-        'You may ignore this warning if you are not using strict mode.'
-    );
-  },
 };
 
 export default messages;

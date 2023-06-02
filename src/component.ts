@@ -11,9 +11,8 @@ interface ComponentReactivity {
   scope: EffectScope;
   effect: ReactiveEffectRunner;
   args: [props: any, ctx?: any];
+  destroyAfterUse: boolean;
 }
-
-const renderedComponents = new WeakMap<any, ComponentReactivity>();
 
 /**
  * Converts a function component into a reactive component.
@@ -52,7 +51,7 @@ export const makeReactive = <P extends {}>(
     const [, setTick] = useState(0);
     const rerender = () => setTick((v) => v + 1);
 
-    const initializeRef = (requiresRerender: boolean) => {
+    const initializeRef = (inRender: boolean) => {
       if (reactivityRef.current === null) {
         const scope = effectScope();
         scope.run(() => {
@@ -67,44 +66,40 @@ export const makeReactive = <P extends {}>(
             scope,
             effect: runner,
             args,
+            destroyAfterUse: inRender && getFiberInDev() !== null,
           };
         });
-        if (requiresRerender) {
+        if (!inRender) {
           rerender();
         }
       }
     };
 
-    useEffect(() => {
-      initializeRef(true);
-      return () => {
-        reactivityRef.current!.scope.stop();
+    const destroyRef = () => {
+      if (reactivityRef.current !== null) {
+        reactivityRef.current.scope.stop();
         reactivityRef.current = null;
+      }
+    };
+
+    useEffect(() => {
+      initializeRef(false);
+      return () => {
+        destroyRef();
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const fiber = getFiberInDev();
-    if (fiber !== null) {
-      // only prevent double render when fiber is not null, indicating development mode
-      const doubleRendered =
-        renderedComponents.get(fiber) ??
-        (fiber.alternate ? renderedComponents.get(fiber.alternate) : undefined);
-      if (doubleRendered && reactivityRef.current === null) {
-        doubleRendered.scope.stop();
-      }
-    }
-
-    initializeRef(false);
-
-    if (fiber !== null) {
-      renderedComponents.set(fiber, reactivityRef.current!);
-    }
+    initializeRef(true);
 
     reactivityRef.current!.args = args;
-    return reactivityRef.current!.scope.run(() =>
+    const ret = reactivityRef.current!.scope.run(() =>
       reactivityRef.current!.effect()
     );
+    if (reactivityRef.current!.destroyAfterUse) {
+      destroyRef();
+    }
+    return ret;
   };
   ReactiveFC.propTypes = component.propTypes;
   ReactiveFC.contextTypes = component.contextTypes;

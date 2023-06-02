@@ -138,16 +138,13 @@ export const useComputed: UseComputed = (<T>(
     }
   };
   initializeRef(true);
-  if (getCurrentScope() === undefined) {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useEffect(() => {
-      initializeRef(false);
-      return () => {
-        destroyRef();
-      };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-  }
+  useEffect(() => {
+    initializeRef(false);
+    return () => {
+      destroyRef();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return cachedRef ?? reactiveRef.current!;
 }) as UseComputed;
 
@@ -328,27 +325,25 @@ export const useWatchEffect = (
   };
   const initializeRef = (inRender: boolean) => {
     if (reactiveRef.current === null) {
+      if (inRender && getFiberInDev() !== null) {
+        return;
+      }
       reactiveRef.current = effect(fn, { ...options, lazy: false });
       if (getCurrentScope() !== undefined) {
         onScopeDispose(() => {
           reactiveRef.current = null;
         });
-      } else if (inRender && getFiberInDev() !== null) {
-        destroyRef();
       }
     }
   };
   initializeRef(true);
-  if (getCurrentScope() === undefined) {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useEffect(() => {
-      initializeRef(false);
-      return () => {
-        destroyRef();
-      };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-  }
+  useEffect(() => {
+    initializeRef(false);
+    return () => {
+      destroyRef();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 };
 
 // ========================================
@@ -623,6 +618,9 @@ export const useWatch: UseWatchOverloads = <
   };
   const initializeRef = (inRender: boolean) => {
     if (reactiveRef.current === null) {
+      if (inRender && getFiberInDev() !== null) {
+        return;
+      }
       reactiveRef.current = watch(sources, cb, {
         ...options,
         lazy: false,
@@ -631,20 +629,15 @@ export const useWatch: UseWatchOverloads = <
         onScopeDispose(() => {
           reactiveRef.current = null;
         });
-      } else if (inRender && getFiberInDev() !== null) {
-        destroyRef();
       }
     }
   };
   initializeRef(true);
-  if (getCurrentScope() === undefined) {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useEffect(() => {
-      initializeRef(false);
-      return () => {
-        destroyRef();
-      };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-  }
+  useEffect(() => {
+    initializeRef(false);
+    return () => {
+      destroyRef();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 };

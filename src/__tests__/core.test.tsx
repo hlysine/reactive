@@ -507,20 +507,20 @@ describe('useWatchEffect', () => {
       })
     );
 
-    expect(effectFn).toBeCalledTimes(2);
-    expect(cleanupFn).toBeCalledTimes(1);
+    expect(effectFn).toBeCalledTimes(1);
+    expect(cleanupFn).toBeCalledTimes(0);
 
     act(() => {
       counter.value++;
     });
 
-    expect(effectFn).toBeCalledTimes(3);
-    expect(cleanupFn).toBeCalledTimes(2);
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(1);
 
     unmount();
 
-    expect(effectFn).toBeCalledTimes(3);
-    expect(cleanupFn).toBeCalledTimes(3);
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(2);
   });
   it('cleans up without effect scope (Strict Mode)', () => {
     // enable React development mode
@@ -543,20 +543,20 @@ describe('useWatchEffect', () => {
       }
     );
 
-    expect(effectFn).toBeCalledTimes(4);
-    expect(cleanupFn).toBeCalledTimes(3);
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(1);
 
     act(() => {
       counter.value++;
     });
 
-    expect(effectFn).toBeCalledTimes(5);
-    expect(cleanupFn).toBeCalledTimes(4);
+    expect(effectFn).toBeCalledTimes(3);
+    expect(cleanupFn).toBeCalledTimes(2);
 
     unmount();
 
-    expect(effectFn).toBeCalledTimes(5);
-    expect(cleanupFn).toBeCalledTimes(5);
+    expect(effectFn).toBeCalledTimes(3);
+    expect(cleanupFn).toBeCalledTimes(3);
   });
   it('rejects lazy option', () => {
     const counter = ref(1);
@@ -1041,20 +1041,20 @@ describe('useWatch', () => {
       )
     );
 
-    expect(effectFn).toBeCalledTimes(2);
-    expect(cleanupFn).toBeCalledTimes(1);
+    expect(effectFn).toBeCalledTimes(1);
+    expect(cleanupFn).toBeCalledTimes(0);
 
     act(() => {
       counter.value++;
     });
 
-    expect(effectFn).toBeCalledTimes(3);
-    expect(cleanupFn).toBeCalledTimes(2);
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(1);
 
     unmount();
 
-    expect(effectFn).toBeCalledTimes(3);
-    expect(cleanupFn).toBeCalledTimes(3);
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(2);
   });
   it('cleans up without effect scope (Strict Mode)', () => {
     // enable React development mode
@@ -1081,20 +1081,20 @@ describe('useWatch', () => {
       }
     );
 
-    expect(effectFn).toBeCalledTimes(4);
-    expect(cleanupFn).toBeCalledTimes(3);
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(1);
 
     act(() => {
       counter.value++;
     });
 
-    expect(effectFn).toBeCalledTimes(5);
-    expect(cleanupFn).toBeCalledTimes(4);
+    expect(effectFn).toBeCalledTimes(3);
+    expect(cleanupFn).toBeCalledTimes(2);
 
     unmount();
 
-    expect(effectFn).toBeCalledTimes(5);
-    expect(cleanupFn).toBeCalledTimes(5);
+    expect(effectFn).toBeCalledTimes(3);
+    expect(cleanupFn).toBeCalledTimes(3);
   });
   it('is reactive', () => {
     const counter = ref(1);

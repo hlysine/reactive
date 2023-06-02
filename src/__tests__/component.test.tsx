@@ -294,10 +294,10 @@ describe('makeReactive', () => {
 
     const { unmount, findByText } = render(<Tester />);
 
-    expect(mockEffect).toBeCalledTimes(2);
-    expect(mockCleanup).toBeCalledTimes(1);
-    expect(mockEffect2).toBeCalledTimes(2);
-    expect(mockCleanup2).toBeCalledTimes(1);
+    expect(mockEffect).toBeCalledTimes(1);
+    expect(mockCleanup).toBeCalledTimes(0);
+    expect(mockEffect2).toBeCalledTimes(1);
+    expect(mockCleanup2).toBeCalledTimes(0);
     expect(mockGetter).toBeCalledTimes(2);
     const content1 = await findByText('1');
     expect(content1).toBeTruthy();
@@ -306,30 +306,30 @@ describe('makeReactive', () => {
       count.value++;
     });
 
-    expect(mockEffect).toBeCalledTimes(3);
-    expect(mockCleanup).toBeCalledTimes(2);
-    expect(mockEffect2).toBeCalledTimes(3);
-    expect(mockCleanup2).toBeCalledTimes(2);
+    expect(mockEffect).toBeCalledTimes(2);
+    expect(mockCleanup).toBeCalledTimes(1);
+    expect(mockEffect2).toBeCalledTimes(2);
+    expect(mockCleanup2).toBeCalledTimes(1);
     expect(mockGetter).toBeCalledTimes(3);
     const content2 = await findByText('2');
     expect(content2).toBeTruthy();
 
     unmount();
 
-    expect(mockEffect).toBeCalledTimes(3);
-    expect(mockCleanup).toBeCalledTimes(3);
-    expect(mockEffect2).toBeCalledTimes(3);
-    expect(mockCleanup2).toBeCalledTimes(3);
+    expect(mockEffect).toBeCalledTimes(2);
+    expect(mockCleanup).toBeCalledTimes(2);
+    expect(mockEffect2).toBeCalledTimes(2);
+    expect(mockCleanup2).toBeCalledTimes(2);
     expect(mockGetter).toBeCalledTimes(3);
 
     act(() => {
       count.value++;
     });
 
-    expect(mockEffect).toBeCalledTimes(3);
-    expect(mockCleanup).toBeCalledTimes(3);
-    expect(mockEffect2).toBeCalledTimes(3);
-    expect(mockCleanup2).toBeCalledTimes(3);
+    expect(mockEffect).toBeCalledTimes(2);
+    expect(mockCleanup).toBeCalledTimes(2);
+    expect(mockEffect2).toBeCalledTimes(2);
+    expect(mockCleanup2).toBeCalledTimes(2);
     expect(mockGetter).toBeCalledTimes(3);
   });
   it('stops reactive effects on unmount (Strict Mode)', async () => {
@@ -365,10 +365,10 @@ describe('makeReactive', () => {
       </React.StrictMode>
     );
 
-    expect(mockEffect).toBeCalledTimes(3);
-    expect(mockCleanup).toBeCalledTimes(2);
-    expect(mockEffect2).toBeCalledTimes(3);
-    expect(mockCleanup2).toBeCalledTimes(2);
+    expect(mockEffect).toBeCalledTimes(2);
+    expect(mockCleanup).toBeCalledTimes(1);
+    expect(mockEffect2).toBeCalledTimes(2);
+    expect(mockCleanup2).toBeCalledTimes(1);
     expect(mockGetter).toBeCalledTimes(3);
     const content1 = await findByText('1');
     expect(content1).toBeTruthy();
@@ -377,30 +377,30 @@ describe('makeReactive', () => {
       count.value++;
     });
 
-    expect(mockEffect).toBeCalledTimes(4);
-    expect(mockCleanup).toBeCalledTimes(3);
-    expect(mockEffect2).toBeCalledTimes(4);
-    expect(mockCleanup2).toBeCalledTimes(3);
+    expect(mockEffect).toBeCalledTimes(3);
+    expect(mockCleanup).toBeCalledTimes(2);
+    expect(mockEffect2).toBeCalledTimes(3);
+    expect(mockCleanup2).toBeCalledTimes(2);
     expect(mockGetter).toBeCalledTimes(4);
     const content2 = await findByText('2');
     expect(content2).toBeTruthy();
 
     unmount();
 
-    expect(mockEffect).toBeCalledTimes(4);
-    expect(mockCleanup).toBeCalledTimes(4);
-    expect(mockEffect2).toBeCalledTimes(4);
-    expect(mockCleanup2).toBeCalledTimes(4);
+    expect(mockEffect).toBeCalledTimes(3);
+    expect(mockCleanup).toBeCalledTimes(3);
+    expect(mockEffect2).toBeCalledTimes(3);
+    expect(mockCleanup2).toBeCalledTimes(3);
     expect(mockGetter).toBeCalledTimes(4);
 
     act(() => {
       count.value++;
     });
 
-    expect(mockEffect).toBeCalledTimes(4);
-    expect(mockCleanup).toBeCalledTimes(4);
-    expect(mockEffect2).toBeCalledTimes(4);
-    expect(mockCleanup2).toBeCalledTimes(4);
+    expect(mockEffect).toBeCalledTimes(3);
+    expect(mockCleanup).toBeCalledTimes(3);
+    expect(mockEffect2).toBeCalledTimes(3);
+    expect(mockCleanup2).toBeCalledTimes(3);
     expect(mockGetter).toBeCalledTimes(4);
   });
 });

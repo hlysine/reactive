@@ -5,13 +5,61 @@ import {
   effect,
 } from '@vue/reactivity';
 import { getFiberInDev } from './helper';
-import { useEffect, useRef, useState } from 'react';
+import { MutableRefObject, useEffect, useRef, useState } from 'react';
 
 interface ComponentReactivity {
   scope: EffectScope;
   effect: ReactiveEffectRunner;
   args: [props: any, ctx?: any];
   destroyAfterUse: boolean;
+}
+
+function destroyReactivityRef(
+  reactivityRef: MutableRefObject<ComponentReactivity | null>
+) {
+  if (reactivityRef.current !== null) {
+    reactivityRef.current.scope.stop();
+    reactivityRef.current = null;
+  }
+}
+
+function useReactivity<P extends {}>(component: React.FC<P>) {
+  const reactivityRef = useRef<ComponentReactivity | null>(null);
+  const [, setTick] = useState(0);
+  const rerender = () => setTick((v) => v + 1);
+
+  const initializeRef = (inRender: boolean) => {
+    if (reactivityRef.current === null) {
+      const scope = effectScope();
+      scope.run(() => {
+        const runner = effect(() => component(...reactivityRef.current!.args), {
+          lazy: true,
+          scheduler: rerender,
+        });
+        reactivityRef.current = {
+          scope,
+          effect: runner,
+          args: [{}],
+          destroyAfterUse: inRender && getFiberInDev() !== null,
+        };
+      });
+      if (!inRender) {
+        rerender();
+      }
+    }
+  };
+
+  useEffect(() => {
+    initializeRef(false);
+    return () => {
+      destroyReactivityRef(reactivityRef);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  initializeRef(true);
+
+  return reactivityRef;
 }
 
 /**
@@ -47,57 +95,14 @@ export const makeReactive = <P extends {}>(
   component: React.FC<P>
 ): React.FC<P> => {
   const ReactiveFC: React.FC<P> = (...args) => {
-    const reactivityRef = useRef<ComponentReactivity | null>(null);
-    const [, setTick] = useState(0);
-    const rerender = () => setTick((v) => v + 1);
-
-    const initializeRef = (inRender: boolean) => {
-      if (reactivityRef.current === null) {
-        const scope = effectScope();
-        scope.run(() => {
-          const runner = effect(
-            () => component(...reactivityRef.current!.args),
-            {
-              lazy: true,
-              scheduler: rerender,
-            }
-          );
-          reactivityRef.current = {
-            scope,
-            effect: runner,
-            args,
-            destroyAfterUse: inRender && getFiberInDev() !== null,
-          };
-        });
-        if (!inRender) {
-          rerender();
-        }
-      }
-    };
-
-    const destroyRef = () => {
-      if (reactivityRef.current !== null) {
-        reactivityRef.current.scope.stop();
-        reactivityRef.current = null;
-      }
-    };
-
-    useEffect(() => {
-      initializeRef(false);
-      return () => {
-        destroyRef();
-      };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    initializeRef(true);
+    const reactivityRef = useReactivity(component);
 
     reactivityRef.current!.args = args;
     const ret = reactivityRef.current!.scope.run(() =>
       reactivityRef.current!.effect()
     );
     if (reactivityRef.current!.destroyAfterUse) {
-      destroyRef();
+      destroyReactivityRef(reactivityRef);
     }
     return ret;
   };

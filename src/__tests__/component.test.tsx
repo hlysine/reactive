@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { act, render } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import {
@@ -6,6 +6,7 @@ import {
   reactive,
   ref,
   useComputed,
+  useReference,
   useWatch,
   useWatchEffect,
 } from '..';
@@ -402,5 +403,34 @@ describe('makeReactive', () => {
     expect(mockEffect2).toBeCalledTimes(3);
     expect(mockCleanup2).toBeCalledTimes(3);
     expect(mockGetter).toBeCalledTimes(4);
+  });
+  it('does not trigger infinite re-renders', async () => {
+    // use orginal return value to restore React development mode
+    getFiberInDev.mockRestore();
+
+    const Tester = makeReactive(function Tester() {
+      const [, setTick] = useState(0);
+      const count = useReference(0);
+      useWatchEffect(() => {
+        setTick((t) => t + 1);
+      });
+      useWatch(
+        count,
+        () => {
+          setTick((t) => t + 1);
+        },
+        { immediate: true }
+      );
+      return <p>{count.value}</p>;
+    });
+
+    const { findByText } = render(
+      <React.StrictMode>
+        <Tester />
+      </React.StrictMode>
+    );
+
+    const content = await findByText('0');
+    expect(content).toBeTruthy();
   });
 });

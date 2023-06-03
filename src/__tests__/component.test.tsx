@@ -36,6 +36,48 @@ describe('makeReactive', () => {
     const content = await findByText('Test component');
     expect(content).toBeTruthy();
   });
+  it('renders custom hooks without crashing', async () => {
+    const count = ref(0);
+    const useCount = makeReactive(function useCount() {
+      return count.value;
+    });
+    const Tester = function Tester() {
+      const count = useCount();
+      return <p>{count}</p>;
+    };
+
+    const { findByText } = render(<Tester />);
+    const content1 = await findByText('0');
+    expect(content1).toBeTruthy();
+
+    act(() => {
+      count.value++;
+    });
+
+    const content2 = await findByText('1');
+    expect(content2).toBeTruthy();
+  });
+  it('renders custom hooks in reactive component without crashing', async () => {
+    const count = ref(0);
+    const useCount = makeReactive(function useCount() {
+      return count.value;
+    });
+    const Tester = makeReactive(function Tester() {
+      const count = useCount();
+      return <p>{count}</p>;
+    });
+
+    const { findByText } = render(<Tester />);
+    const content1 = await findByText('0');
+    expect(content1).toBeTruthy();
+
+    act(() => {
+      count.value++;
+    });
+
+    const content2 = await findByText('1');
+    expect(content2).toBeTruthy();
+  });
   it('accepts props', async () => {
     const Tester = makeReactive(function Tester({
       value,

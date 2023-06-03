@@ -10,13 +10,14 @@ const Watcher = makeReactive(function Watcher() {
     setState(obj.a);
     return () => console.log('cleanup useWatchEffect');
   });
-  console.log('render App');
+  console.log('render Watcher');
 
   return <button onClick={() => obj.a++}>Test update inside watcher</button>;
 });
 
 export default makeReactive(function App() {
   const [show, setShow] = useState(true);
+  console.log('render App');
 
   return (
     <>

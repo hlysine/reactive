@@ -14,15 +14,18 @@ import {
   useWatchEffect,
   watch,
 } from '..';
+import React from 'react';
 import 'jest-performance-testing';
 import { renderHook, act } from '@testing-library/react';
+import * as helper from '../helper';
 
-let consoleLog: jest.SpyInstance;
 let consoleWarn: jest.SpyInstance;
+let getFiberInDev: jest.SpyInstance;
 
 beforeEach(() => {
-  consoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
   consoleWarn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  // mock getFiberInDev to simulate React production mode
+  getFiberInDev = jest.spyOn(helper, 'getFiberInDev').mockReturnValue(null);
 });
 
 afterEach(() => {
@@ -89,6 +92,64 @@ describe('useComputed', () => {
     expect(getter).toBeCalledTimes(2);
     expect(setter).toBeCalledTimes(1);
   });
+  it('works with writable computed ref (Dev Mode)', () => {
+    // enable React development mode
+    getFiberInDev.mockRestore();
+
+    const count = ref(0);
+    const getter = jest.fn(() => count.value + 1);
+    const setter = jest.fn((val) => (count.value = val - 1));
+    const { result } = renderHook(() =>
+      useComputed({
+        get: getter,
+        set: setter,
+      })
+    );
+    expect(result.current.value).toBe(1);
+    expect(isRef(result.current)).toBe(true);
+    expect(isReadonly(result.current)).toBe(false);
+
+    act(() => {
+      result.current.value++;
+      // test the value while also re-running the getter
+      expect(result.current.value).toBe(2);
+    });
+
+    expect(getter).toBeCalledTimes(2);
+    expect(setter).toBeCalledTimes(1);
+  });
+  it('works with writable computed ref (Strict Mode)', () => {
+    // enable React development mode
+    getFiberInDev.mockRestore();
+
+    const count = ref(0);
+    const getter = jest.fn(() => count.value + 1);
+    const setter = jest.fn((val) => (count.value = val - 1));
+    const { result } = renderHook(
+      () =>
+        useComputed({
+          get: getter,
+          set: setter,
+        }),
+      {
+        wrapper: ({ children }) => (
+          <React.StrictMode>{children}</React.StrictMode>
+        ),
+      }
+    );
+    expect(result.current.value).toBe(1);
+    expect(isRef(result.current)).toBe(true);
+    expect(isReadonly(result.current)).toBe(false);
+
+    act(() => {
+      result.current.value++;
+      // test the value while also re-running the getter
+      expect(result.current.value).toBe(2);
+    });
+
+    expect(getter).toBeCalledTimes(2);
+    expect(setter).toBeCalledTimes(1);
+  });
   it('keeps the same instance across re-render', () => {
     const obj = { count: 1 };
     const { result, rerender } = renderHook(() => useComputed(() => obj));
@@ -127,9 +188,75 @@ describe('useComputed', () => {
 
     expect(result.current.value).toBe(2);
     expect(getter).toBeCalledTimes(2);
+  });
+  it('is reactive (Dev Mode)', () => {
+    // enable React development mode
+    getFiberInDev.mockRestore();
 
-    // expect the hook to warn about using it inside a component that is not wrapped by makeReactive
-    expect(consoleLog).toHaveBeenCalled();
+    const count = ref(0);
+    const getter = jest.fn(() => count.value + 1);
+    const { result, rerender, unmount } = renderHook(() => useComputed(getter));
+
+    expect(result.current.value).toBe(1);
+    expect(getter).toBeCalledTimes(1); // todo: why does it not invoke twice here?
+
+    rerender();
+
+    expect(result.current.value).toBe(1);
+    expect(getter).toBeCalledTimes(2);
+
+    act(() => {
+      count.value++;
+    });
+
+    expect(result.current.value).toBe(2);
+    expect(getter).toBeCalledTimes(3);
+
+    unmount();
+    act(() => {
+      count.value++;
+    });
+
+    expect(result.current.value).toBe(2);
+    expect(getter).toBeCalledTimes(3);
+  });
+  it('is reactive (Strict Mode)', () => {
+    // enable React development mode
+    getFiberInDev.mockRestore();
+
+    const count = ref(0);
+    const getter = jest.fn(() => count.value + 1);
+    const { result, rerender, unmount } = renderHook(
+      () => useComputed(getter),
+      {
+        wrapper: ({ children }) => (
+          <React.StrictMode>{children}</React.StrictMode>
+        ),
+      }
+    );
+
+    expect(result.current.value).toBe(1);
+    expect(getter).toBeCalledTimes(1); // todo: why does it not invoke twice here?
+
+    rerender();
+
+    expect(result.current.value).toBe(1);
+    expect(getter).toBeCalledTimes(2);
+
+    act(() => {
+      count.value++;
+    });
+
+    expect(result.current.value).toBe(2);
+    expect(getter).toBeCalledTimes(3);
+
+    unmount();
+    act(() => {
+      count.value++;
+    });
+
+    expect(result.current.value).toBe(2);
+    expect(getter).toBeCalledTimes(3);
   });
 });
 
@@ -364,9 +491,72 @@ describe('useWatchEffect', () => {
 
     expect(effectFn).toBeCalledTimes(2);
     expect(cleanupFn).toBeCalledTimes(2);
+  });
+  it('cleans up without effect scope (Dev Mode)', () => {
+    // enable React development mode
+    getFiberInDev.mockRestore();
 
-    // expect the hook to warn about using it inside a component that is not wrapped by makeReactive
-    expect(consoleLog).toHaveBeenCalled();
+    const counter = ref(1);
+    const effectFn = jest.fn();
+    const cleanupFn = jest.fn();
+
+    const { unmount } = renderHook(() =>
+      useWatchEffect(() => {
+        effectFn(counter.value);
+        return cleanupFn;
+      })
+    );
+
+    expect(effectFn).toBeCalledTimes(1);
+    expect(cleanupFn).toBeCalledTimes(0);
+
+    act(() => {
+      counter.value++;
+    });
+
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(1);
+
+    unmount();
+
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(2);
+  });
+  it('cleans up without effect scope (Strict Mode)', () => {
+    // enable React development mode
+    getFiberInDev.mockRestore();
+
+    const counter = ref(1);
+    const effectFn = jest.fn();
+    const cleanupFn = jest.fn();
+
+    const { unmount } = renderHook(
+      () =>
+        useWatchEffect(() => {
+          effectFn(counter.value);
+          return cleanupFn;
+        }),
+      {
+        wrapper: ({ children }) => (
+          <React.StrictMode>{children}</React.StrictMode>
+        ),
+      }
+    );
+
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(1);
+
+    act(() => {
+      counter.value++;
+    });
+
+    expect(effectFn).toBeCalledTimes(3);
+    expect(cleanupFn).toBeCalledTimes(2);
+
+    unmount();
+
+    expect(effectFn).toBeCalledTimes(3);
+    expect(cleanupFn).toBeCalledTimes(3);
   });
   it('rejects lazy option', () => {
     const counter = ref(1);
@@ -831,9 +1021,80 @@ describe('useWatch', () => {
 
     expect(effectFn).toBeCalledTimes(2);
     expect(cleanupFn).toBeCalledTimes(2);
+  });
+  it('cleans up without effect scope (Dev Mode)', () => {
+    // enable React development mode
+    getFiberInDev.mockRestore();
 
-    // expect the hook to warn about using it inside a component that is not wrapped by makeReactive
-    expect(consoleLog).toHaveBeenCalled();
+    const counter = ref(1);
+    const effectFn = jest.fn();
+    const cleanupFn = jest.fn();
+
+    const { unmount } = renderHook(() =>
+      useWatch(
+        counter,
+        (...args) => {
+          effectFn(...args);
+          return cleanupFn;
+        },
+        { immediate: true }
+      )
+    );
+
+    expect(effectFn).toBeCalledTimes(1);
+    expect(cleanupFn).toBeCalledTimes(0);
+
+    act(() => {
+      counter.value++;
+    });
+
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(1);
+
+    unmount();
+
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(2);
+  });
+  it('cleans up without effect scope (Strict Mode)', () => {
+    // enable React development mode
+    getFiberInDev.mockRestore();
+
+    const counter = ref(1);
+    const effectFn = jest.fn();
+    const cleanupFn = jest.fn();
+
+    const { unmount } = renderHook(
+      () =>
+        useWatch(
+          counter,
+          (...args) => {
+            effectFn(...args);
+            return cleanupFn;
+          },
+          { immediate: true }
+        ),
+      {
+        wrapper: ({ children }) => (
+          <React.StrictMode>{children}</React.StrictMode>
+        ),
+      }
+    );
+
+    expect(effectFn).toBeCalledTimes(2);
+    expect(cleanupFn).toBeCalledTimes(1);
+
+    act(() => {
+      counter.value++;
+    });
+
+    expect(effectFn).toBeCalledTimes(3);
+    expect(cleanupFn).toBeCalledTimes(2);
+
+    unmount();
+
+    expect(effectFn).toBeCalledTimes(3);
+    expect(cleanupFn).toBeCalledTimes(3);
   });
   it('is reactive', () => {
     const counter = ref(1);

@@ -6,6 +6,7 @@ import {
   reactive,
   ref,
   useComputed,
+  useReactive,
   useReference,
   useWatch,
   useWatchEffect,
@@ -188,6 +189,35 @@ describe('makeReactive', () => {
       // should not re-render
       expect(renderCount.current.Tester).toBeRenderedTimes(1);
       const content = await findByText('1');
+      expect(content).toBeTruthy();
+    });
+  });
+  it('does not re-render when state changes in initializer', async () => {
+    const count = ref(0);
+    const mockInitializer = jest.fn(() => ({ a: count.value, b: 2 }));
+
+    const Tester = makeReactive(function Tester() {
+      const obj = useReactive(mockInitializer);
+      return <p>{obj.a}</p>;
+    });
+
+    const { renderCount } = perf(React);
+
+    const { findByText } = render(<Tester />);
+
+    expect(mockInitializer).toBeCalledTimes(1);
+    const content = await findByText('0');
+    expect(content).toBeTruthy();
+
+    act(() => {
+      count.value++;
+    });
+
+    await wait(async () => {
+      // should not re-render, but should trigger effect again
+      expect(renderCount.current.Tester).toBeRenderedTimes(1);
+      expect(mockInitializer).toBeCalledTimes(1);
+      const content = await findByText('0');
       expect(content).toBeTruthy();
     });
   });

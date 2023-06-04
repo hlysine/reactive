@@ -1,4 +1,9 @@
-import { ReactiveFlags, isRef } from '@vue/reactivity';
+import {
+  ReactiveFlags,
+  isRef,
+  pauseTracking,
+  resetTracking,
+} from '@vue/reactivity';
 import { __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED as SecretInternals } from 'react';
 
 declare module 'react' {
@@ -63,4 +68,13 @@ export function traverse(value: unknown, seen?: Set<unknown>) {
     }
   }
   return value;
+}
+
+export function invokeUntracked<T extends (...args: any[]) => any>(
+  initializer: T
+): ReturnType<T> {
+  pauseTracking();
+  const ret = initializer();
+  resetTracking();
+  return ret;
 }

@@ -21,7 +21,13 @@ import {
   readonly,
   ref,
 } from '@vue/reactivity';
-import { getFiberInDev, hasChanged, isFunction, traverse } from './helper';
+import {
+  getFiberInDev,
+  hasChanged,
+  invokeUntracked,
+  isFunction,
+  traverse,
+} from './helper';
 import { useEffect, useRef } from 'react';
 import messages from './messages';
 
@@ -51,7 +57,9 @@ export { ref, computed, reactive, readonly } from '@vue/reactivity';
 export const useReference = <T>(value: T | (() => T)): Ref<UnwrapRef<T>> => {
   const reactiveRef = useRef<Ref<UnwrapRef<T>> | null>(null);
   if (reactiveRef.current === null) {
-    reactiveRef.current = ref(isFunction(value) ? value() : value);
+    reactiveRef.current = ref(
+      isFunction(value) ? invokeUntracked(value) : value
+    );
   }
   return reactiveRef.current;
 };
@@ -182,7 +190,9 @@ export const useReactive = <T extends object>(
 ): UnwrapNestedRefs<T> => {
   const reactiveRef = useRef<UnwrapNestedRefs<T> | null>(null);
   if (reactiveRef.current === null) {
-    reactiveRef.current = reactive(isFunction(target) ? target() : target);
+    reactiveRef.current = reactive(
+      isFunction(target) ? invokeUntracked(target) : target
+    );
   }
   return reactiveRef.current;
 };
@@ -231,7 +241,9 @@ export const useReadonly = <T extends object>(
 ): DeepReadonly<UnwrapNestedRefs<T>> => {
   const reactiveRef = useRef<DeepReadonly<UnwrapNestedRefs<T>> | null>(null);
   if (reactiveRef.current === null) {
-    reactiveRef.current = readonly(isFunction(target) ? target() : target);
+    reactiveRef.current = readonly(
+      isFunction(target) ? invokeUntracked(target) : target
+    );
   }
   return reactiveRef.current;
 };

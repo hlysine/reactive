@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.5](https://github.com/hlysine/reactive/compare/v0.4.4...v0.4.5) (2023-06-03)
+
+
+### Features
+
+* allow makeReactive to be used on custom hooks ([83d414d](https://github.com/hlysine/reactive/commit/83d414d2f9b9ee852fb412a68d6fa5198bc90153))
+* rework reactive core to work with strict mode intrinsically ([bf19270](https://github.com/hlysine/reactive/commit/bf19270ce7ce601cde3f31dd25ba0df979bc7a4b))
+
+
+### Bug Fixes
+
+* infinite re-render when effects trigger state change before component mounts ([a9a4fb7](https://github.com/hlysine/reactive/commit/a9a4fb76fa8751343150384551f47555ff0c7ac7))
+
 ## [0.4.4](https://github.com/hlysine/reactive/compare/v0.4.3...v0.4.4) (2023-06-01)
 
 

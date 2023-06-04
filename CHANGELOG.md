@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.6](https://github.com/hlysine/reactive/compare/v0.4.5...v0.4.6) (2023-06-04)
+
+
+### Bug Fixes
+
+* prevent initializers from being tracked ([4e8f245](https://github.com/hlysine/reactive/commit/4e8f24546cc03c30f6934ec18eb57b8c471e93d5))
+
 ## [0.4.5](https://github.com/hlysine/reactive/compare/v0.4.4...v0.4.5) (2023-06-03)
 
 

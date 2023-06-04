@@ -7,7 +7,7 @@ import {
   shallowReadonly,
   shallowRef,
 } from '@vue/reactivity';
-import { isFunction } from './helper';
+import { invokeUntracked, isFunction } from './helper';
 import { useRef } from 'react';
 
 export {
@@ -49,7 +49,9 @@ export {
 export const useShallowRef = <T>(value: T | (() => T)): ShallowRef<T> => {
   const reactiveRef = useRef<ShallowRef<T> | null>(null);
   if (reactiveRef.current === null) {
-    reactiveRef.current = shallowRef(isFunction(value) ? value() : value);
+    reactiveRef.current = shallowRef(
+      isFunction(value) ? invokeUntracked(value) : value
+    );
   }
   return reactiveRef.current;
 };
@@ -121,7 +123,7 @@ export const useShallowReactive = <T extends object>(
   const reactiveRef = useRef<T | null>(null);
   if (reactiveRef.current === null) {
     reactiveRef.current = shallowReactive(
-      isFunction(target) ? target() : target
+      isFunction(target) ? invokeUntracked(target) : target
     );
   }
   return reactiveRef.current;
@@ -173,7 +175,7 @@ export const useShallowReadonly = <T extends object>(
   const reactiveRef = useRef<Readonly<T> | null>(null);
   if (reactiveRef.current === null) {
     reactiveRef.current = shallowReadonly(
-      isFunction(target) ? target() : target
+      isFunction(target) ? invokeUntracked(target) : target
     );
   }
   return reactiveRef.current;

@@ -23,7 +23,7 @@ function destroyReactivityRef(
   }
 }
 
-function useReactivity<P extends {}>(component: React.FC<P>) {
+function useReactivityInternals<P extends {}>(component: React.FC<P>) {
   const reactivityRef = useRef<ComponentReactivity | null>(null);
   const [, setTick] = useState(0);
   const rerender = () => setTick((v) => v + 1);
@@ -136,7 +136,7 @@ export const makeReactive: MakeReactive = <P extends {}>(
   component: React.FC<P>
 ): React.FC<P> => {
   const ReactiveFC: React.FC<P> = (...args) => {
-    const reactivityRef = useReactivity(component);
+    const reactivityRef = useReactivityInternals(component);
 
     reactivityRef.current!.args = args;
     const ret = reactivityRef.current!.scope.run(function scopedRender() {

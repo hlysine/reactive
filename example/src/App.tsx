@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   makeReactive,
   reactive,
@@ -32,8 +32,8 @@ export default makeReactive(function App() {
 
   const count = useReference(0);
   useComputed(() => count.value + 1);
-  const obj = useReactive({ a: 1 });
-  useReadonly(obj);
+  const obj2 = useReactive({ a: 1 });
+  useReadonly(obj2);
   useShallowRef(0);
   useShallowReactive({ b: 2 });
   useShallowReadonly({ c: 2 });

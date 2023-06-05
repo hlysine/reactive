@@ -8,7 +8,7 @@ import {
   shallowRef,
 } from '@vue/reactivity';
 import { invokeUntracked, isFunction } from './helper';
-import { useRef } from 'react';
+import { useDebugValue, useRef } from 'react';
 
 export {
   shallowRef,
@@ -53,6 +53,7 @@ export const useShallowRef = <T>(value: T | (() => T)): ShallowRef<T> => {
       isFunction(value) ? invokeUntracked(value) : value
     );
   }
+  useDebugValue(reactiveRef.current, (ref) => ref.value);
   return reactiveRef.current;
 };
 
@@ -74,6 +75,7 @@ export const useCustomRef = <T>(factory: CustomRefFactory<T>): Ref<T> => {
   if (reactiveRef.current === null) {
     reactiveRef.current = customRef(factory);
   }
+  useDebugValue(reactiveRef.current, (ref) => ref.value);
   return reactiveRef.current;
 };
 
@@ -126,6 +128,7 @@ export const useShallowReactive = <T extends object>(
       isFunction(target) ? invokeUntracked(target) : target
     );
   }
+  useDebugValue(reactiveRef.current);
   return reactiveRef.current;
 };
 
@@ -178,5 +181,6 @@ export const useShallowReadonly = <T extends object>(
       isFunction(target) ? invokeUntracked(target) : target
     );
   }
+  useDebugValue(reactiveRef.current);
   return reactiveRef.current;
 };

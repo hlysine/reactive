@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.7](https://github.com/hlysine/reactive/compare/v0.4.6...v0.4.7) (2023-06-05)
+
+
+### Features
+
+* add debug value to all applicable hooks ([acb0cd5](https://github.com/hlysine/reactive/commit/acb0cd5bb7956bbb6ec90b02cfb2c2251cb70af4))
+* avoid minifying function names to improve devtools experience ([0d725b6](https://github.com/hlysine/reactive/commit/0d725b6ee883469eebed84180f77d27290718029))
+* rename internal hook ([afe12c9](https://github.com/hlysine/reactive/commit/afe12c9701ec34ccad07413b46f2f254549f2e05))
+
 ## [0.4.6](https://github.com/hlysine/reactive/compare/v0.4.5...v0.4.6) (2023-06-04)
 
 

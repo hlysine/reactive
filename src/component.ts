@@ -32,10 +32,15 @@ function useReactivity<P extends {}>(component: React.FC<P>) {
     if (reactivityRef.current === null) {
       const scope = effectScope();
       scope.run(() => {
-        const runner = effect(() => component(...reactivityRef.current!.args), {
-          lazy: true,
-          scheduler: rerender,
-        });
+        const runner = effect(
+          function reactiveRender() {
+            return component(...reactivityRef.current!.args);
+          },
+          {
+            lazy: true,
+            scheduler: rerender,
+          }
+        );
         reactivityRef.current = {
           scope,
           effect: runner,
@@ -134,9 +139,9 @@ export const makeReactive: MakeReactive = <P extends {}>(
     const reactivityRef = useReactivity(component);
 
     reactivityRef.current!.args = args;
-    const ret = reactivityRef.current!.scope.run(() =>
-      reactivityRef.current!.effect()
-    );
+    const ret = reactivityRef.current!.scope.run(function scopedRender() {
+      return reactivityRef.current!.effect();
+    });
     if (reactivityRef.current!.destroyAfterUse) {
       destroyReactivityRef(reactivityRef);
     }

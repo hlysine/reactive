@@ -15,14 +15,22 @@ module.exports = {
       file: pkg.main,
       format: 'cjs',
       sourcemap: true,
-      plugins: [terser()],
+      plugins: [
+        terser({
+          keep_fnames: true,
+        }),
+      ],
       exports: 'auto',
     },
     {
       file: pkg.module,
       format: 'es',
       sourcemap: true,
-      plugins: [terser()],
+      plugins: [
+        terser({
+          keep_fnames: true,
+        }),
+      ],
       exports: 'auto',
     },
     {

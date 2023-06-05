@@ -28,7 +28,7 @@ import {
   isFunction,
   traverse,
 } from './helper';
-import { useEffect, useRef } from 'react';
+import { useDebugValue, useEffect, useRef } from 'react';
 import messages from './messages';
 
 export { ref, computed, reactive, readonly } from '@vue/reactivity';
@@ -61,6 +61,7 @@ export const useReference = <T>(value: T | (() => T)): Ref<UnwrapRef<T>> => {
       isFunction(value) ? invokeUntracked(value) : value
     );
   }
+  useDebugValue(reactiveRef.current, (ref) => ref.value);
   return reactiveRef.current;
 };
 
@@ -153,6 +154,7 @@ export const useComputed: UseComputed = (<T>(
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useDebugValue(cachedRef ?? reactiveRef.current!, (ref) => ref.value);
   return cachedRef ?? reactiveRef.current!;
 }) as UseComputed;
 
@@ -194,6 +196,7 @@ export const useReactive = <T extends object>(
       isFunction(target) ? invokeUntracked(target) : target
     );
   }
+  useDebugValue(reactiveRef.current);
   return reactiveRef.current;
 };
 
@@ -245,6 +248,7 @@ export const useReadonly = <T extends object>(
       isFunction(target) ? invokeUntracked(target) : target
     );
   }
+  useDebugValue(reactiveRef.current);
   return reactiveRef.current;
 };
 

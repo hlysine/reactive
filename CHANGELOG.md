@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.5.0](https://github.com/hlysine/reactive/compare/v0.4.7...v0.5.0) (2023-06-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* add useReactiveRerender hook, makeReactive creates reactive props
+
+### Features
+
+* add useReactiveRerender hook, makeReactive creates reactive props ([14ddab6](https://github.com/hlysine/reactive/commit/14ddab6ae0be250a7842f0e5cadc4b28a1db2742))
+
 ## [0.4.7](https://github.com/hlysine/reactive/compare/v0.4.6...v0.4.7) (2023-06-05)
 
 

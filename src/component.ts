@@ -3,16 +3,17 @@ import {
   effectScope,
   ReactiveEffectRunner,
   effect,
+  shallowReadonly,
+  shallowReactive,
 } from '@vue/reactivity';
 import { getFiberInDev } from './helper';
-import { MutableRefObject, useEffect, useRef, useState } from 'react';
-
-interface ComponentReactivity {
-  scope: EffectScope;
-  effect: ReactiveEffectRunner;
-  args: [props: any, ctx?: any];
-  destroyAfterUse: boolean;
-}
+import {
+  MutableRefObject,
+  useDebugValue,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 function destroyReactivityRef(
   reactivityRef: MutableRefObject<ComponentReactivity | null>
@@ -23,8 +24,103 @@ function destroyReactivityRef(
   }
 }
 
-function useReactivityInternals<P extends {}>(component: React.FC<P>) {
+function assignDiff(target: Record<any, any>, source: Record<any, any>) {
+  let remainingKeys = Object.keys(target);
+  if (source !== null && source !== undefined && typeof source === 'object') {
+    Object.entries(source).forEach(([key, value]) => {
+      remainingKeys = remainingKeys.filter((k) => k !== key);
+      if (key in target && Object.is(target[key], value)) {
+        return;
+      }
+      target[key] = value;
+    });
+  }
+  remainingKeys.forEach((key) => {
+    delete target[key];
+  });
+}
+
+interface ReactiveRerenderRef<T> {
+  reactive: T;
+  readonly: T;
+}
+
+/**
+ * Converts an object that changes on re-render to a reactive object that maintains the same instance across re-renders.
+ * The converted object is **only shallowly reactive and is readonly**.
+ *
+ * This hook converts data in React's reactivity system to reactive data that is compatible with the rest of this
+ * library. You should use other hooks to create reactive data from source if possible, but if not, you can use this
+ * hook to convert the data. A typical use case is to pass values from `useState` hooks or React contexts into this
+ * function so that reactive effects, such as `useWatchEffect`, can react to data changes from those hooks. You can also
+ * use this hook to create reactive props if the component is not already wrapped with `makeReactive`.
+ *
+ * @example
+ * Converting a value from `useState` to a reactive object. Note that a better solution is to replace `useState` with
+ * hooks such as `useReactive` if possible. This example is for illustration purpose only.
+ * ```js
+ * // Inside a function component:
+ * const [count, setCount] = useState(0);
+ * const state = useReactiveRerender({ count });
+ *
+ * useWatchEffect(() => {
+ *   console.log(state.count); // executes whenever count changes
+ * });
+ * ```
+ *
+ * @example
+ * Creating reactive props. Components wrapped with `makeReactive` already have reactive props, so you don't need this
+ * hook in those components.
+ * ```jsx
+ * function App(props) {
+ *   props = useReactiveRerender(props);
+ *   return <div>{props.count}</div>;
+ * }
+ * ```
+ *
+ * @param target The data to be made reactive.
+ * @returns A reactive object that maintains the same instance across re-renders.
+ */
+export const useReactiveRerender = <T extends object>(target: T): T => {
+  const reactiveRef = useRef<ReactiveRerenderRef<T> | null>(null);
+  if (reactiveRef.current === null) {
+    const reactive = shallowReactive({ ...target });
+    reactiveRef.current = {
+      reactive,
+      readonly: shallowReadonly(reactive),
+    };
+  } else {
+    assignDiff(reactiveRef.current.reactive, target);
+  }
+  useDebugValue(reactiveRef.current.reactive);
+  return reactiveRef.current.readonly;
+};
+
+interface ComponentReactivity {
+  scope: EffectScope;
+  effect: ReactiveEffectRunner;
+  props: any;
+  ctx: any;
+  destroyAfterUse: boolean;
+  /**
+   * Reactive re-renders are paused when props are updating
+   */
+  updatingProps: boolean;
+}
+
+function useReactivityInternals<P extends {}>(
+  props: P,
+  component: React.FC<P>
+) {
   const reactivityRef = useRef<ComponentReactivity | null>(null);
+
+  // Stop reactive re-render when updating props because the component is already going to re-render
+  if (reactivityRef.current !== null)
+    reactivityRef.current.updatingProps = true;
+  const reactiveProps = useReactiveRerender(props);
+  if (reactivityRef.current !== null)
+    reactivityRef.current.updatingProps = false;
+
   const [, setTick] = useState(0);
   const rerender = () => setTick((v) => v + 1);
 
@@ -34,18 +130,25 @@ function useReactivityInternals<P extends {}>(component: React.FC<P>) {
       scope.run(() => {
         const runner = effect(
           function reactiveRender() {
-            return component(...reactivityRef.current!.args);
+            return component(
+              reactivityRef.current!.props,
+              reactivityRef.current!.ctx
+            );
           },
           {
             lazy: true,
-            scheduler: rerender,
+            scheduler: () => {
+              if (!reactivityRef.current!.updatingProps) rerender();
+            },
           }
         );
         reactivityRef.current = {
           scope,
           effect: runner,
-          args: [{}],
+          props: reactiveProps,
+          ctx: undefined,
           destroyAfterUse: inRender && getFiberInDev() !== null,
+          updatingProps: false,
         };
       });
       if (!inRender) {
@@ -69,7 +172,8 @@ function useReactivityInternals<P extends {}>(component: React.FC<P>) {
 
 interface MakeReactive {
   /**
-   * Converts a function component into a reactive component.
+   * Converts a function component into a reactive component. A reactive component receives reactive props and
+   * re-renders automatically when its data dependencies are modified.
    *
    * If your function component makes use of a reactive value, the component has to be wrapped by `makeReactive` so
    * that it can re-render when the reactive value changes.
@@ -99,7 +203,8 @@ interface MakeReactive {
    */
   <P extends {}>(component: React.FC<P>): React.FC<P>;
   /**
-   * Converts a custom hook to be reactive.
+   * Converts a custom hook to be reactive. A reactive component receives reactive props and
+   * re-renders automatically when its data dependencies are modified.
    *
    * If your custom hook makes use of a reactive value, the function has to be wrapped by `makeReactive` so
    * that it can trigger a re-render on the component when the reactive value changes.
@@ -135,10 +240,10 @@ interface MakeReactive {
 export const makeReactive: MakeReactive = <P extends {}>(
   component: React.FC<P>
 ): React.FC<P> => {
-  const ReactiveFC: React.FC<P> = (...args) => {
-    const reactivityRef = useReactivityInternals(component);
+  const ReactiveFC: React.FC<P> = (props, ctx) => {
+    const reactivityRef = useReactivityInternals(props, component);
 
-    reactivityRef.current!.args = args;
+    reactivityRef.current!.ctx = ctx;
     const ret = reactivityRef.current!.scope.run(function scopedRender() {
       return reactivityRef.current!.effect();
     });

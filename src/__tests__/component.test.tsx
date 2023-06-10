@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
-import { act, render } from '@testing-library/react';
+import { act, render, renderHook } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import {
+  isReactive,
+  isReadonly,
+  isShallow,
   makeReactive,
   reactive,
   ref,
   useComputed,
   useReactive,
+  useReactiveRerender,
   useReference,
   useWatch,
   useWatchEffect,
@@ -25,6 +29,53 @@ beforeEach(() => {
 afterEach(() => {
   jest.resetAllMocks();
   jest.restoreAllMocks();
+});
+
+describe('useReactiveRerender', () => {
+  it('returns a valid object', () => {
+    const { result } = renderHook(() =>
+      useReactiveRerender({ a: 1, b: 'abc' })
+    );
+    expect(result.current.a).toBe(1);
+    expect(isReactive(result.current)).toBe(true);
+    expect(isReadonly(result.current)).toBe(true);
+    expect(isShallow(result.current)).toBe(true);
+  });
+  it('keeps the same instance across re-render', () => {
+    const { result, rerender } = renderHook((obj: any = { a: 1, b: 'abc' }) =>
+      useReactiveRerender(obj)
+    );
+    const ref = result.current;
+
+    rerender();
+
+    expect(result.current).toBe(ref);
+    expect(result.current.a).toBe(1);
+
+    rerender({ a: 2, b: 'def' });
+
+    expect(result.current).toBe(ref);
+    expect(result.current.a).toBe(2);
+  });
+  it('triggers reactive effects', async () => {
+    const mockEffect = jest.fn();
+    const Tester = function Tester(props: { a: number }) {
+      props = useReactiveRerender(props);
+      useWatchEffect(() => {
+        mockEffect(props.a);
+      });
+      return <p>{props.a}</p>;
+    };
+    const { findByText, rerender } = render(<Tester a={1} />);
+    const content = await findByText('1');
+    expect(content).toBeTruthy();
+    expect(mockEffect).toBeCalledTimes(1);
+
+    rerender(<Tester a={2} />);
+
+    expect(mockEffect).toBeCalledTimes(2);
+    expect(mockEffect).toBeCalledWith(2);
+  });
 });
 
 describe('makeReactive', () => {
@@ -80,39 +131,58 @@ describe('makeReactive', () => {
     expect(content2).toBeTruthy();
   });
   it('accepts props', async () => {
-    const Tester = makeReactive(function Tester({
-      value,
-      onChange,
-    }: {
+    const Tester = makeReactive(function Tester(props: {
       value: string;
       onChange: () => void;
+      obj: { a: number; b: number };
     }) {
+      expect(isReactive(props)).toBe(true);
+      expect(isReadonly(props)).toBe(true);
+      expect(isReactive(props.obj)).toBe(false);
+      expect(isReadonly(props.obj)).toBe(false);
       return (
         <>
-          <p>{value}</p>
-          <input onChange={onChange} value={value} />
+          <p>{props.value}</p>
+          <input onChange={props.onChange} value={props.value} />
         </>
       );
     });
 
     const { findByText } = render(
-      <Tester value="Test component" onChange={() => {}} />
+      <Tester value="Test component" onChange={() => {}} obj={{ a: 1, b: 2 }} />
     );
     const content = await findByText('Test component');
     expect(content).toBeTruthy();
   });
   it('updates props', async () => {
-    const Tester = makeReactive(function Tester({ value }: { value: string }) {
-      return <p>{value}</p>;
+    const mockEffect = jest.fn();
+    const Tester = makeReactive(function Tester(props: { value?: string }) {
+      useWatchEffect(() => {
+        mockEffect(props.value);
+      });
+      return <p>{props.value}</p>;
     });
 
     const { findByText, rerender } = render(<Tester value="Test component" />);
     const content = await findByText('Test component');
     expect(content).toBeTruthy();
+    expect(mockEffect).toHaveBeenCalledTimes(1);
 
     rerender(<Tester value="Test component 2" />);
     const content2 = await findByText('Test component 2');
     expect(content2).toBeTruthy();
+    expect(mockEffect).toHaveBeenCalledTimes(2);
+
+    rerender(<Tester value="Test component 2" />);
+    const content3 = await findByText('Test component 2');
+    expect(content3).toBeTruthy();
+    expect(mockEffect).toHaveBeenCalledTimes(2);
+
+    rerender(<Tester />);
+    await expect(
+      async () => await findByText('Test component 2')
+    ).rejects.toThrow();
+    expect(mockEffect).toHaveBeenCalledTimes(3);
   });
   it('re-renders when ref changes', async () => {
     const count = ref(0);

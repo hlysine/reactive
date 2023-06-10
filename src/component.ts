@@ -52,7 +52,8 @@ interface ReactiveRerenderRef<T> {
  * This hook converts data in React's reactivity system to reactive data that is compatible with the rest of this
  * library. You should use other hooks to create reactive data from source if possible, but if not, you can use this
  * hook to convert the data. A typical use case is to pass values from `useState` hooks or React contexts into this
- * function so that reactive effects, such as `useWatchEffect`, can react to data changes from those hooks.
+ * function so that reactive effects, such as `useWatchEffect`, can react to data changes from those hooks. You can also
+ * use this hook to create reactive props if the component is not already wrapped with `makeReactive`.
  *
  * @example
  * Converting a value from `useState` to a reactive object. Note that a better solution is to replace `useState` with
@@ -65,6 +66,16 @@ interface ReactiveRerenderRef<T> {
  * useWatchEffect(() => {
  *   console.log(state.count); // executes whenever count changes
  * });
+ * ```
+ *
+ * @example
+ * Creating reactive props. Components wrapped with `makeReactive` already have reactive props, so you don't need this
+ * hook in those components.
+ * ```jsx
+ * function App(props) {
+ *   props = useReactiveRerender(props);
+ *   return <div>{props.count}</div>;
+ * }
  * ```
  *
  * @param target The data to be made reactive.
@@ -161,7 +172,8 @@ function useReactivityInternals<P extends {}>(
 
 interface MakeReactive {
   /**
-   * Converts a function component into a reactive component.
+   * Converts a function component into a reactive component. A reactive component receives reactive props and
+   * re-renders automatically when its data dependencies are modified.
    *
    * If your function component makes use of a reactive value, the component has to be wrapped by `makeReactive` so
    * that it can re-render when the reactive value changes.
@@ -191,7 +203,8 @@ interface MakeReactive {
    */
   <P extends {}>(component: React.FC<P>): React.FC<P>;
   /**
-   * Converts a custom hook to be reactive.
+   * Converts a custom hook to be reactive. A reactive component receives reactive props and
+   * re-renders automatically when its data dependencies are modified.
    *
    * If your custom hook makes use of a reactive value, the function has to be wrapped by `makeReactive` so
    * that it can trigger a re-render on the component when the reactive value changes.

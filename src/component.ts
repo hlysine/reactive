@@ -47,6 +47,7 @@ interface ReactiveRerenderRef<T> {
 
 /**
  * Converts an object that changes on re-render to a reactive object that maintains the same instance across re-renders.
+ * The converted object is **only shallowly reactive and is readonly**.
  *
  * This hook converts data in React's reactivity system to reactive data that is compatible with the rest of this
  * library. You should use other hooks to create reactive data from source if possible, but if not, you can use this

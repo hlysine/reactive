@@ -78,3 +78,74 @@ export function invokeUntracked<T extends (...args: any[]) => any>(
   resetTracking();
   return ret;
 }
+
+const WRAP_KEY = '__current__';
+
+export type WrappedRef<T> = T & { [WRAP_KEY]: T };
+
+const OBJ_NON_EXTENSIBLE =
+  'A wrapped ref cannot contain objects that are non-extensible.';
+
+export function createWrappedRef<T>(ref: T): WrappedRef<T> {
+  if (!Object.isExtensible(ref)) {
+    throw new Error(OBJ_NON_EXTENSIBLE);
+  }
+  const obj = {
+    [WRAP_KEY]: ref,
+  } as WrappedRef<T>;
+  return new Proxy(obj, {
+    defineProperty(target, property, attributes) {
+      return Reflect.defineProperty(
+        target[WRAP_KEY] as any,
+        property,
+        attributes
+      );
+    },
+    deleteProperty(target, p) {
+      return Reflect.deleteProperty(target[WRAP_KEY] as any, p);
+    },
+    get(target, p, receiver) {
+      if (p === WRAP_KEY) return target[WRAP_KEY];
+      else return Reflect.get(target[WRAP_KEY] as any, p, receiver);
+    },
+    getOwnPropertyDescriptor(target, p) {
+      return Reflect.getOwnPropertyDescriptor(target[WRAP_KEY] as any, p);
+    },
+    getPrototypeOf(target) {
+      return Reflect.getPrototypeOf(target[WRAP_KEY] as any);
+    },
+    has(target, p) {
+      return Reflect.has(target[WRAP_KEY] as any, p);
+    },
+    isExtensible(target) {
+      return Reflect.isExtensible(target);
+    },
+    ownKeys(target) {
+      return Reflect.ownKeys(target[WRAP_KEY] as any);
+    },
+    preventExtensions() {
+      throw new Error(
+        'The extensibility of a wrapped ref cannot be modified. It is always true.'
+      );
+    },
+    set(target, p, newValue, receiver) {
+      if (p === WRAP_KEY) {
+        if (!Object.isExtensible(newValue)) {
+          throw new Error(OBJ_NON_EXTENSIBLE);
+        }
+        target[WRAP_KEY] = newValue;
+        return true;
+      } else return Reflect.set(target[WRAP_KEY] as any, p, newValue, receiver);
+    },
+    setPrototypeOf(target, v) {
+      return Reflect.setPrototypeOf(target[WRAP_KEY] as any, v);
+    },
+  });
+}
+
+export function updateWrappedRef<T, U>(
+  ref: WrappedRef<T>,
+  newVal: U extends T ? U : never
+) {
+  ref[WRAP_KEY] = newVal;
+}

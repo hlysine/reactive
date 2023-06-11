@@ -83,17 +83,17 @@ const WRAP_KEY = '__current__';
 
 export type WrappedRef<T> = T & { [WRAP_KEY]: T };
 
+const OBJ_NON_EXTENSIBLE =
+  'A wrapped ref cannot contain objects that are non-extensible.';
+
 export function createWrappedRef<T>(ref: T): WrappedRef<T> {
+  if (!Object.isExtensible(ref)) {
+    throw new Error(OBJ_NON_EXTENSIBLE);
+  }
   const obj = {
     [WRAP_KEY]: ref,
   } as WrappedRef<T>;
   return new Proxy(obj, {
-    apply(target, thisArg, argArray) {
-      return Reflect.apply(target[WRAP_KEY] as any, thisArg, argArray);
-    },
-    construct(target, argArray, newTarget) {
-      return Reflect.construct(target[WRAP_KEY] as any, argArray, newTarget);
-    },
     defineProperty(target, property, attributes) {
       return Reflect.defineProperty(
         target[WRAP_KEY] as any,
@@ -118,16 +118,21 @@ export function createWrappedRef<T>(ref: T): WrappedRef<T> {
       return Reflect.has(target[WRAP_KEY] as any, p);
     },
     isExtensible(target) {
-      return Reflect.isExtensible(target[WRAP_KEY] as any);
+      return Reflect.isExtensible(target);
     },
     ownKeys(target) {
       return Reflect.ownKeys(target[WRAP_KEY] as any);
     },
-    preventExtensions(target) {
-      return Reflect.preventExtensions(target[WRAP_KEY] as any);
+    preventExtensions() {
+      throw new Error(
+        'The extensibility of a wrapped ref cannot be modified. It is always true.'
+      );
     },
     set(target, p, newValue, receiver) {
       if (p === WRAP_KEY) {
+        if (!Object.isExtensible(newValue)) {
+          throw new Error(OBJ_NON_EXTENSIBLE);
+        }
         target[WRAP_KEY] = newValue;
         return true;
       } else return Reflect.set(target[WRAP_KEY] as any, p, newValue, receiver);

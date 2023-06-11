@@ -4,6 +4,7 @@ import {
   isReactive,
   isReadonly,
   isRef,
+  makeReactive,
   reactive,
   ref,
   useComputed,
@@ -16,7 +17,7 @@ import {
 } from '..';
 import React from 'react';
 import 'jest-performance-testing';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, render } from '@testing-library/react';
 import * as helper from '../helper';
 
 let consoleWarn: jest.SpyInstance;
@@ -257,6 +258,59 @@ describe('useComputed', () => {
 
     expect(result.current.value).toBe(2);
     expect(getter).toBeCalledTimes(2);
+  });
+  it('triggers reactive effects with makeReactive', async () => {
+    const mockEffect = jest.fn();
+    const count = ref(0);
+    const Tester = makeReactive(function Tester() {
+      const derived = useComputed(() => count.value + 1);
+      useWatch(derived, (val) => mockEffect(val));
+      return <div>{derived.value}</div>;
+    });
+    const { unmount, findByText } = render(<Tester />);
+
+    await expect(findByText('1')).resolves.toBeInTheDocument();
+    expect(mockEffect).toBeCalledTimes(0);
+
+    act(() => {
+      count.value++;
+    });
+
+    await expect(findByText('2')).resolves.toBeInTheDocument();
+    expect(mockEffect).toBeCalledTimes(1);
+
+    unmount();
+    act(() => {
+      count.value++;
+    });
+
+    expect(mockEffect).toBeCalledTimes(1);
+  });
+  it('triggers reactive effects without makeReactive', async () => {
+    const mockEffect = jest.fn();
+    const count = ref(0);
+    const Tester = function Tester() {
+      const derived = useComputed(() => count.value + 1);
+      useWatch(derived, (val) => mockEffect(val));
+      return <div>{derived.value}</div>;
+    };
+    const { unmount, findByText } = render(<Tester />);
+
+    await expect(findByText('1')).resolves.toBeInTheDocument();
+    expect(mockEffect).toBeCalledTimes(0);
+
+    act(() => {
+      count.value++;
+    });
+
+    expect(mockEffect).toBeCalledTimes(1);
+
+    unmount();
+    act(() => {
+      count.value++;
+    });
+
+    expect(mockEffect).toBeCalledTimes(1);
   });
 });
 

@@ -109,7 +109,14 @@ export function createWrappedRef<T>(ref: T): WrappedRef<T> {
       else return Reflect.get(target[WRAP_KEY] as any, p, receiver);
     },
     getOwnPropertyDescriptor(target, p) {
-      return Reflect.getOwnPropertyDescriptor(target[WRAP_KEY] as any, p);
+      const descriptor = Reflect.getOwnPropertyDescriptor(
+        target[WRAP_KEY] as any,
+        p
+      );
+      if (descriptor && !descriptor.configurable) {
+        return undefined;
+      }
+      return descriptor;
     },
     getPrototypeOf(target) {
       return Reflect.getPrototypeOf(target[WRAP_KEY] as any);

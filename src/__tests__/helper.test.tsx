@@ -25,6 +25,13 @@ describe('createWrappedRef', () => {
     expect(Object.getOwnPropertyDescriptor(wrapped, 'a')).toEqual(
       Object.getOwnPropertyDescriptor(obj, 'a')
     );
+
+    Object.defineProperty(obj, 'a', {
+      configurable: false,
+    });
+    // expect non-configurable properties to not be reported as existing
+    // see invariants at https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/getOwnPropertyDescriptor#invariants
+    expect(Object.getOwnPropertyDescriptor(wrapped, 'a')).toBeUndefined();
   });
   it('traps getPrototypeOf', () => {
     const obj = { a: 1 };

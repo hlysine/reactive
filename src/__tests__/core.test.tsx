@@ -198,19 +198,19 @@ describe('useComputed', () => {
     const { result, rerender, unmount } = renderHook(() => useComputed(getter));
 
     expect(result.current.value).toBe(1);
-    expect(getter).toBeCalledTimes(1); // todo: why does it not invoke twice here?
+    expect(getter).toBeCalledTimes(1);
 
     rerender();
 
     expect(result.current.value).toBe(1);
-    expect(getter).toBeCalledTimes(2);
+    expect(getter).toBeCalledTimes(1);
 
     act(() => {
       count.value++;
     });
 
     expect(result.current.value).toBe(2);
-    expect(getter).toBeCalledTimes(3);
+    expect(getter).toBeCalledTimes(2);
 
     unmount();
     act(() => {
@@ -218,7 +218,7 @@ describe('useComputed', () => {
     });
 
     expect(result.current.value).toBe(2);
-    expect(getter).toBeCalledTimes(3);
+    expect(getter).toBeCalledTimes(2);
   });
   it('is reactive (Strict Mode)', () => {
     // enable React development mode
@@ -236,19 +236,19 @@ describe('useComputed', () => {
     );
 
     expect(result.current.value).toBe(1);
-    expect(getter).toBeCalledTimes(1); // todo: why does it not invoke twice here?
+    expect(getter).toBeCalledTimes(1);
 
     rerender();
 
     expect(result.current.value).toBe(1);
-    expect(getter).toBeCalledTimes(2);
+    expect(getter).toBeCalledTimes(1);
 
     act(() => {
       count.value++;
     });
 
     expect(result.current.value).toBe(2);
-    expect(getter).toBeCalledTimes(3);
+    expect(getter).toBeCalledTimes(2);
 
     unmount();
     act(() => {
@@ -256,7 +256,7 @@ describe('useComputed', () => {
     });
 
     expect(result.current.value).toBe(2);
-    expect(getter).toBeCalledTimes(3);
+    expect(getter).toBeCalledTimes(2);
   });
 });
 

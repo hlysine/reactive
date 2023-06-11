@@ -22,11 +22,14 @@ import {
   ref,
 } from '@vue/reactivity';
 import {
+  WrappedRef,
+  createWrappedRef,
   getFiberInDev,
   hasChanged,
   invokeUntracked,
   isFunction,
   traverse,
+  updateWrappedRef,
 } from './helper';
 import { useDebugValue, useEffect, useRef } from 'react';
 import messages from './messages';
@@ -122,27 +125,36 @@ export const useComputed: UseComputed = (<T>(
   optionsOrGetter: ComputedGetter<T> | WritableComputedOptions<T>,
   debugOptions?: DebuggerOptions
 ): ComputedRef<T> | WritableComputedRef<T> => {
-  const reactiveRef = useRef<ComputedRef<T> | WritableComputedRef<T> | null>(
-    null
-  );
-  let cachedRef: ComputedRef<T> | WritableComputedRef<T> | null = null;
+  const reactiveRef = useRef<WrappedRef<
+    ComputedRef<T> | WritableComputedRef<T>
+  > | null>(null);
   const destroyRef = () => {
     if (reactiveRef.current !== null) {
       reactiveRef.current.effect.stop();
-      reactiveRef.current = null;
     }
   };
   const initializeRef = (inRender: boolean) => {
-    if (reactiveRef.current === null) {
-      reactiveRef.current = computed(optionsOrGetter as any, debugOptions);
-      if (getCurrentScope() !== undefined) {
-        onScopeDispose(() => {
-          reactiveRef.current = null;
-        });
-      } else if (inRender && getFiberInDev() !== null) {
-        cachedRef = reactiveRef.current;
-        setTimeout(() => cachedRef!.effect.stop(), 0);
-        reactiveRef.current = null;
+    if (
+      reactiveRef.current === null ||
+      !reactiveRef.current.__current__.effect.active
+    ) {
+      const computedRef = computed(
+        optionsOrGetter as ComputedGetter<T>,
+        debugOptions
+      );
+      if (reactiveRef.current === null) {
+        reactiveRef.current = createWrappedRef(computedRef);
+      } else {
+        updateWrappedRef(reactiveRef.current, computedRef);
+      }
+      if (
+        getCurrentScope() === undefined &&
+        inRender &&
+        getFiberInDev() !== null
+      ) {
+        setTimeout(() => {
+          destroyRef();
+        }, 0);
       }
     }
   };
@@ -154,8 +166,8 @@ export const useComputed: UseComputed = (<T>(
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  useDebugValue(cachedRef ?? reactiveRef.current!, (ref) => ref.value);
-  return cachedRef ?? reactiveRef.current!;
+  useDebugValue(reactiveRef.current!, (ref) => ref.value);
+  return reactiveRef.current!;
 }) as UseComputed;
 
 /**

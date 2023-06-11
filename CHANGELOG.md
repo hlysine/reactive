@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.6.0](https://github.com/hlysine/reactive/compare/v0.5.0...v0.6.0) (2023-06-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* introduce wrapped refs to fix useComputed
+
+### Bug Fixes
+
+* introduce wrapped refs to fix useComputed ([f1d7323](https://github.com/hlysine/reactive/commit/f1d7323c62054c3999affd1ac23853820d447665))
+
 ## [0.5.0](https://github.com/hlysine/reactive/compare/v0.4.7...v0.5.0) (2023-06-10)
 
 

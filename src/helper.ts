@@ -104,9 +104,12 @@ export function createWrappedRef<T>(ref: T): WrappedRef<T> {
     deleteProperty(target, p) {
       return Reflect.deleteProperty(target[WRAP_KEY] as any, p);
     },
-    get(target, p, receiver) {
-      if (p === WRAP_KEY) return target[WRAP_KEY];
-      else return Reflect.get(target[WRAP_KEY] as any, p, receiver);
+    get(target, p) {
+      if (p === WRAP_KEY) {
+        return target[WRAP_KEY];
+      } else {
+        return Reflect.get(target[WRAP_KEY] as any, p, target[WRAP_KEY] as any);
+      }
     },
     getOwnPropertyDescriptor(target, p) {
       const descriptor = Reflect.getOwnPropertyDescriptor(
@@ -135,14 +138,20 @@ export function createWrappedRef<T>(ref: T): WrappedRef<T> {
         'The extensibility of a wrapped ref cannot be modified. It is always true.'
       );
     },
-    set(target, p, newValue, receiver) {
+    set(target, p, newValue) {
       if (p === WRAP_KEY) {
         if (!Object.isExtensible(newValue)) {
           throw new Error(OBJ_NON_EXTENSIBLE);
         }
         target[WRAP_KEY] = newValue;
         return true;
-      } else return Reflect.set(target[WRAP_KEY] as any, p, newValue, receiver);
+      } else
+        return Reflect.set(
+          target[WRAP_KEY] as any,
+          p,
+          newValue,
+          target[WRAP_KEY] as any
+        );
     },
     setPrototypeOf(target, v) {
       return Reflect.setPrototypeOf(target[WRAP_KEY] as any, v);

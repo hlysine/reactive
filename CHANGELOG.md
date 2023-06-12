@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.7.0](https://github.com/hlysine/reactive/compare/v0.6.2...v0.7.0) (2023-06-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* separate makeReactive and makeReactiveHook to support hook parameters
+
+### Bug Fixes
+
+* separate makeReactive and makeReactiveHook to support hook parameters ([4f63c0e](https://github.com/hlysine/reactive/commit/4f63c0e8bbadbde17937a6d1467e954b1b01db09))
+
 ## [0.6.2](https://github.com/hlysine/reactive/compare/v0.6.1...v0.6.2) (2023-06-11)
 
 

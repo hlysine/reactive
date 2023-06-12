@@ -6,6 +6,7 @@ import {
   isReadonly,
   isShallow,
   makeReactive,
+  makeReactiveHook,
   reactive,
   ref,
   useComputed,
@@ -90,7 +91,7 @@ describe('makeReactive', () => {
   });
   it('renders custom hooks without crashing', async () => {
     const count = ref(0);
-    const useCount = makeReactive(function useCount() {
+    const useCount = makeReactiveHook(function useCount() {
       return count.value;
     });
     const Tester = function Tester() {
@@ -98,9 +99,12 @@ describe('makeReactive', () => {
       return <p>{count}</p>;
     };
 
-    const { findByText } = render(<Tester />);
+    const { renderCount } = perf(React);
+
+    const { findByText, unmount } = render(<Tester />);
     const content1 = await findByText('0');
     expect(content1).toBeTruthy();
+    expect(renderCount.current.Tester).toBeRenderedTimes(1);
 
     act(() => {
       count.value++;
@@ -108,10 +112,58 @@ describe('makeReactive', () => {
 
     const content2 = await findByText('1');
     expect(content2).toBeTruthy();
+    expect(renderCount.current.Tester).toBeRenderedTimes(2);
+
+    unmount();
+    act(() => {
+      count.value++;
+    });
+
+    expect(renderCount.current.Tester).toBeRenderedTimes(2);
+  });
+  it('renders custom hooks without crashing (Strict Mode)', async () => {
+    // use orginal return value to restore React development mode
+    getFiberInDev.mockRestore();
+
+    const renderedHook = jest.fn();
+
+    const count = ref(0);
+    const useCount = makeReactiveHook(function useCount() {
+      renderedHook();
+      return count.value;
+    });
+    const Tester = function Tester() {
+      const count = useCount();
+      return <p>{count}</p>;
+    };
+
+    const { findByText, unmount } = render(
+      <React.StrictMode>
+        <Tester />
+      </React.StrictMode>
+    );
+    const content1 = await findByText('0');
+    expect(content1).toBeTruthy();
+    expect(renderedHook).toBeCalledTimes(4);
+
+    act(() => {
+      count.value++;
+    });
+
+    const content2 = await findByText('1');
+    expect(content2).toBeTruthy();
+    expect(renderedHook).toBeCalledTimes(6);
+
+    unmount();
+    act(() => {
+      count.value++;
+    });
+
+    expect(renderedHook).toBeCalledTimes(6);
   });
   it('renders custom hooks in reactive component without crashing', async () => {
     const count = ref(0);
-    const useCount = makeReactive(function useCount() {
+    const useCount = makeReactiveHook(function useCount() {
       return count.value;
     });
     const Tester = makeReactive(function Tester() {
@@ -119,9 +171,12 @@ describe('makeReactive', () => {
       return <p>{count}</p>;
     });
 
-    const { findByText } = render(<Tester />);
+    const { renderCount } = perf(React);
+
+    const { findByText, unmount } = render(<Tester />);
     const content1 = await findByText('0');
     expect(content1).toBeTruthy();
+    expect(renderCount.current.Tester).toBeRenderedTimes(1);
 
     act(() => {
       count.value++;
@@ -129,6 +184,14 @@ describe('makeReactive', () => {
 
     const content2 = await findByText('1');
     expect(content2).toBeTruthy();
+    expect(renderCount.current.Tester).toBeRenderedTimes(2);
+
+    unmount();
+    act(() => {
+      count.value++;
+    });
+
+    expect(renderCount.current.Tester).toBeRenderedTimes(2);
   });
   it('accepts props', async () => {
     const Tester = makeReactive(function Tester(props: {
@@ -153,6 +216,18 @@ describe('makeReactive', () => {
     );
     const content = await findByText('Test component');
     expect(content).toBeTruthy();
+  });
+  it('accepts args in hook version', async () => {
+    const useCount = makeReactiveHook(function useCount(count: number) {
+      return count;
+    });
+    const { result, rerender } = renderHook(useCount, { initialProps: 0 });
+
+    expect(result.current).toBe(0);
+
+    rerender(1);
+
+    expect(result.current).toBe(1);
   });
   it('updates props', async () => {
     const mockEffect = jest.fn();

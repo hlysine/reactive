@@ -6,7 +6,7 @@ import {
   shallowReadonly,
   shallowReactive,
 } from '@vue/reactivity';
-import { getFiberInDev } from './helper';
+import { assignDiff, getFiberInDev } from './helper';
 import {
   MutableRefObject,
   useDebugValue,
@@ -22,22 +22,6 @@ function destroyReactivityRef(
     reactivityRef.current.scope.stop();
     reactivityRef.current = null;
   }
-}
-
-function assignDiff(target: Record<any, any>, source: Record<any, any>) {
-  let remainingKeys = Object.keys(target);
-  if (source !== null && source !== undefined && typeof source === 'object') {
-    Object.entries(source).forEach(([key, value]) => {
-      remainingKeys = remainingKeys.filter((k) => k !== key);
-      if (key in target && Object.is(target[key], value)) {
-        return;
-      }
-      target[key] = value;
-    });
-  }
-  remainingKeys.forEach((key) => {
-    delete target[key];
-  });
 }
 
 interface ReactiveRerenderRef<T> {
@@ -109,17 +93,35 @@ interface ComponentReactivity {
 }
 
 function useReactivityInternals<P extends {}>(
-  props: P,
-  component: React.FC<P>
+  component: React.FC<P>,
+  props: P
+): MutableRefObject<ComponentReactivity | null>;
+function useReactivityInternals<T extends unknown[]>(
+  hook: (...args: T) => any,
+  args: T
+): MutableRefObject<ComponentReactivity | null>;
+function useReactivityInternals<P extends {}>(
+  func: React.FC<P>,
+  propsOrArgs: P
 ) {
   const reactivityRef = useRef<ComponentReactivity | null>(null);
 
-  // Stop reactive re-render when updating props because the component is already going to re-render
-  if (reactivityRef.current !== null)
-    reactivityRef.current.updatingProps = true;
-  const reactiveProps = useReactiveRerender(props);
-  if (reactivityRef.current !== null)
-    reactivityRef.current.updatingProps = false;
+  let reactiveProps: P;
+  if (Array.isArray(propsOrArgs)) {
+    // if propsOrArgs is an array, it comes from a hook function, which should not have reactive args
+    reactiveProps = propsOrArgs;
+    if (reactivityRef.current !== null) {
+      reactivityRef.current.props = reactiveProps;
+    }
+  } else {
+    // Stop reactive re-render when updating props because the component is already going to re-render
+    if (reactivityRef.current !== null)
+      reactivityRef.current.updatingProps = true;
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    reactiveProps = useReactiveRerender(propsOrArgs);
+    if (reactivityRef.current !== null)
+      reactivityRef.current.updatingProps = false;
+  }
 
   const [, setTick] = useState(0);
   const rerender = () => setTick((v) => v + 1);
@@ -130,10 +132,16 @@ function useReactivityInternals<P extends {}>(
       scope.run(() => {
         const runner = effect(
           function reactiveRender() {
-            return component(
-              reactivityRef.current!.props,
-              reactivityRef.current!.ctx
-            );
+            if (Array.isArray(reactivityRef.current!.props)) {
+              return (func as (...args: any) => any)(
+                ...reactivityRef.current!.props
+              );
+            } else {
+              return func(
+                reactivityRef.current!.props,
+                reactivityRef.current!.ctx
+              );
+            }
           },
           {
             lazy: true,
@@ -170,78 +178,41 @@ function useReactivityInternals<P extends {}>(
   return reactivityRef;
 }
 
-interface MakeReactive {
-  /**
-   * Converts a function component into a reactive component. A reactive component receives reactive props and
-   * re-renders automatically when its data dependencies are modified.
-   *
-   * If your function component makes use of a reactive value, the component has to be wrapped by `makeReactive` so
-   * that it can re-render when the reactive value changes.
-   *
-   * @example
-   * Simple usage of `makeReactive`.
-   * ```tsx
-   * export default makeReactive(function App() {
-   *   const state = useReactive({ count: 1 });
-   *   return <p>{state.count}</p>;
-   * });
-   * ```
-   *
-   * @example
-   * Once a component is made reactive, it may access reactive values from any sources, not just from props, contexts
-   * and hooks.
-   * ```tsx
-   * import { reactiveState } from './anotherFile';
-   *
-   * export default makeReactive(function App() {
-   *   return <p>{reactiveState.count}</p>;
-   * });
-   * ```
-   * @typeParam P - The props of a React function component.
-   * @param component The function component to be made reactive.
-   * @returns A reactive function component.
-   */
-  <P extends {}>(component: React.FC<P>): React.FC<P>;
-  /**
-   * Converts a custom hook to be reactive. A reactive component receives reactive props and
-   * re-renders automatically when its data dependencies are modified.
-   *
-   * If your custom hook makes use of a reactive value, the function has to be wrapped by `makeReactive` so
-   * that it can trigger a re-render on the component when the reactive value changes.
-   *
-   * @example
-   * Simple usage of `makeReactive`.
-   * ```tsx
-   * export default makeReactive(function useCount() {
-   *   const state = useReactive({ count: 1 });
-   *   return state.count;
-   * });
-   * ```
-   *
-   * @example
-   * Once a custom hook is made reactive, it may access reactive values from any sources, not just from props, contexts
-   * and hooks.
-   * ```tsx
-   * import { reactiveState } from './anotherFile';
-   *
-   * export default makeReactive(function useReactiveState() {
-   *   return reactiveState.count;
-   * });
-   * ```
-   * @typeParam T - A React custom hook function.
-   * @param component The custom hook to be made reactive.
-   * @returns A reactive custom hook.
-   */
-  <T extends (...args: any) => any>(
-    hook: T extends React.FC<any> ? never : T
-  ): T;
-}
-
-export const makeReactive: MakeReactive = <P extends {}>(
+/**
+ * Converts a function component into a reactive component. A reactive component receives reactive props and
+ * re-renders automatically when its data dependencies are modified.
+ *
+ * If your function component makes use of a reactive value, the component has to be wrapped by `makeReactive` so
+ * that it can re-render when the reactive value changes.
+ *
+ * @example
+ * Simple usage of `makeReactive`.
+ * ```tsx
+ * export default makeReactive(function App() {
+ *   const state = useReactive({ count: 1 });
+ *   return <p>{state.count}</p>;
+ * });
+ * ```
+ *
+ * @example
+ * Once a component is made reactive, it may access reactive values from any sources, not just from props, contexts
+ * and hooks.
+ * ```tsx
+ * import { reactiveState } from './anotherFile';
+ *
+ * export default makeReactive(function App() {
+ *   return <p>{reactiveState.count}</p>;
+ * });
+ * ```
+ * @typeParam P - The props of a React function component.
+ * @param component The function component to be made reactive.
+ * @returns A reactive function component.
+ */
+export const makeReactive = <P extends {}>(
   component: React.FC<P>
 ): React.FC<P> => {
   const ReactiveFC: React.FC<P> = (props, ctx) => {
-    const reactivityRef = useReactivityInternals(props, component);
+    const reactivityRef = useReactivityInternals(component, props);
 
     reactivityRef.current!.ctx = ctx;
     const ret = reactivityRef.current!.scope.run(function scopedRender() {
@@ -261,4 +232,51 @@ export const makeReactive: MakeReactive = <P extends {}>(
     writable: false,
   });
   return ReactiveFC;
+};
+
+/**
+ * Converts a custom hook to be reactive. A reactive hook causes the component to re-render automatically when its data
+ * dependencies are modified.
+ *
+ * If your custom hook makes use of a reactive value, the function has to be wrapped by `makeReactive` so
+ * that it can trigger a re-render on the component when the reactive value changes.
+ *
+ * @example
+ * Simple usage of `makeReactive`.
+ * ```tsx
+ * export default makeReactive(function useCount() {
+ *   const state = useReactive({ count: 1 });
+ *   return state.count;
+ * });
+ * ```
+ *
+ * @example
+ * Once a custom hook is made reactive, it may access reactive values from any sources, not just from props, contexts
+ * and hooks.
+ * ```tsx
+ * import { reactiveState } from './anotherFile';
+ *
+ * export default makeReactive(function useReactiveState() {
+ *   return reactiveState.count;
+ * });
+ * ```
+ * @typeParam T - A React custom hook function.
+ * @param component The custom hook to be made reactive.
+ * @returns A reactive custom hook.
+ */
+export const makeReactiveHook = <T extends (...args: any) => any>(
+  hook: T
+): T => {
+  const useReactiveHook: T = ((...args: any) => {
+    const reactivityRef = useReactivityInternals(hook, args);
+
+    const ret = reactivityRef.current!.scope.run(function scopedRender() {
+      return reactivityRef.current!.effect();
+    });
+    if (reactivityRef.current!.destroyAfterUse) {
+      destroyReactivityRef(reactivityRef);
+    }
+    return ret;
+  }) as T;
+  return useReactiveHook;
 };

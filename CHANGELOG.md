@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.6.2](https://github.com/hlysine/reactive/compare/v0.6.1...v0.6.2) (2023-06-11)
+
+
+### Bug Fixes
+
+* change reflect argument ([f199f8a](https://github.com/hlysine/reactive/commit/f199f8a56886e62c373797e3dd29c9bb5ed2c837))
+
+## [0.6.1](https://github.com/hlysine/reactive/compare/v0.6.0...v0.6.1) (2023-06-11)
+
+
+### Bug Fixes
+
+* wrapped ref should not report descriptors for non-configurable properties ([7ed96b2](https://github.com/hlysine/reactive/commit/7ed96b2bb73ff946f6a51661859d28de66529149))
+
 ## [0.6.0](https://github.com/hlysine/reactive/compare/v0.5.0...v0.6.0) (2023-06-11)
 
 

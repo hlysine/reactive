@@ -54,14 +54,16 @@ export { ref, computed, reactive, readonly } from '@vue/reactivity';
  * const count = useReference(1)
  * ```
  *
- * @param value - The object to wrap in the ref, or a function that returns the object.
+ * @param initialValue - The object to wrap in the ref, or a function that returns the object.
  * @see {@link https://vuejs.org/api/reactivity-core.html#ref}
  */
-export const useReference = <T>(value: T | (() => T)): Ref<UnwrapRef<T>> => {
+export const useReference = <T>(
+  initialValue: T | (() => T)
+): Ref<UnwrapRef<T>> => {
   const reactiveRef = useRef<Ref<UnwrapRef<T>> | null>(null);
   if (reactiveRef.current === null) {
     reactiveRef.current = ref(
-      isFunction(value) ? invokeUntracked(value) : value
+      isFunction(initialValue) ? invokeUntracked(initialValue) : initialValue
     );
   }
   useDebugValue(reactiveRef.current, (ref) => ref.value);
@@ -196,16 +198,16 @@ export const useComputed: UseComputed = (<T>(
  * const obj = useReactive(() => ({ count: 0 }))
  * ```
  *
- * @param target - The source object, or a function that returns the object.
+ * @param initialValue - The source object, or a function that returns the object.
  * @see {@link https://vuejs.org/api/reactivity-core.html#reactive}
  */
 export const useReactive = <T extends object>(
-  target: T | (() => T)
+  initialValue: T | (() => T)
 ): UnwrapNestedRefs<T> => {
   const reactiveRef = useRef<UnwrapNestedRefs<T> | null>(null);
   if (reactiveRef.current === null) {
     reactiveRef.current = reactive(
-      isFunction(target) ? invokeUntracked(target) : target
+      isFunction(initialValue) ? invokeUntracked(initialValue) : initialValue
     );
   }
   useDebugValue(reactiveRef.current);
@@ -248,16 +250,16 @@ export const useReactive = <T extends object>(
  * copy.count++ // warning!
  * ```
  *
- * @param target - The source object, or a function that returns the object.
+ * @param initialValue - The source object, or a function that returns the object.
  * @see {@link https://vuejs.org/api/reactivity-core.html#readonly}
  */
 export const useReadonly = <T extends object>(
-  target: T | (() => T)
+  initialValue: T | (() => T)
 ): DeepReadonly<UnwrapNestedRefs<T>> => {
   const reactiveRef = useRef<DeepReadonly<UnwrapNestedRefs<T>> | null>(null);
   if (reactiveRef.current === null) {
     reactiveRef.current = readonly(
-      isFunction(target) ? invokeUntracked(target) : target
+      isFunction(initialValue) ? invokeUntracked(initialValue) : initialValue
     );
   }
   useDebugValue(reactiveRef.current);

@@ -43,14 +43,16 @@ export {
  * state.value = { count: 2 }
  * ```
  *
- * @param value - The "inner value" for the shallow ref, or a function that returns the inner value.
+ * @param initialValue - The "inner value" for the shallow ref, or a function that returns the inner value.
  * @see {@link https://vuejs.org/api/reactivity-advanced.html#shallowref}
  */
-export const useShallowRef = <T>(value: T | (() => T)): ShallowRef<T> => {
+export const useShallowRef = <T>(
+  initialValue: T | (() => T)
+): ShallowRef<T> => {
   const reactiveRef = useRef<ShallowRef<T> | null>(null);
   if (reactiveRef.current === null) {
     reactiveRef.current = shallowRef(
-      isFunction(value) ? invokeUntracked(value) : value
+      isFunction(initialValue) ? invokeUntracked(initialValue) : initialValue
     );
   }
   useDebugValue(reactiveRef.current, (ref) => ref.value);
@@ -116,16 +118,16 @@ export const useCustomRef = <T>(factory: CustomRefFactory<T>): Ref<T> => {
  * state.nested.bar++
  * ```
  *
- * @param target - The source object, or a function that returns the source object.
+ * @param initialValue - The source object, or a function that returns the source object.
  * @see {@link https://vuejs.org/api/reactivity-advanced.html#shallowreactive}
  */
 export const useShallowReactive = <T extends object>(
-  target: T | (() => T)
+  initialValue: T | (() => T)
 ): T => {
   const reactiveRef = useRef<T | null>(null);
   if (reactiveRef.current === null) {
     reactiveRef.current = shallowReactive(
-      isFunction(target) ? invokeUntracked(target) : target
+      isFunction(initialValue) ? invokeUntracked(initialValue) : initialValue
     );
   }
   useDebugValue(reactiveRef.current);
@@ -169,16 +171,16 @@ export const useShallowReactive = <T extends object>(
  * state.nested.bar++
  * ```
  *
- * @param target - The source object, or a function that returns the source object.
+ * @param initialValue - The source object, or a function that returns the source object.
  * @see {@link https://vuejs.org/api/reactivity-advanced.html#shallowreadonly}
  */
 export const useShallowReadonly = <T extends object>(
-  target: T | (() => T)
+  initialValue: T | (() => T)
 ): Readonly<T> => {
   const reactiveRef = useRef<Readonly<T> | null>(null);
   if (reactiveRef.current === null) {
     reactiveRef.current = shallowReadonly(
-      isFunction(target) ? invokeUntracked(target) : target
+      isFunction(initialValue) ? invokeUntracked(initialValue) : initialValue
     );
   }
   useDebugValue(reactiveRef.current);

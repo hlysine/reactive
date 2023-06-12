@@ -6,7 +6,7 @@ import {
   shallowReadonly,
   shallowReactive,
 } from '@vue/reactivity';
-import { getFiberInDev } from './helper';
+import { assignDiff, getFiberInDev } from './helper';
 import {
   MutableRefObject,
   useDebugValue,
@@ -22,22 +22,6 @@ function destroyReactivityRef(
     reactivityRef.current.scope.stop();
     reactivityRef.current = null;
   }
-}
-
-function assignDiff(target: Record<any, any>, source: Record<any, any>) {
-  let remainingKeys = Object.keys(target);
-  if (source !== null && source !== undefined && typeof source === 'object') {
-    Object.entries(source).forEach(([key, value]) => {
-      remainingKeys = remainingKeys.filter((k) => k !== key);
-      if (key in target && Object.is(target[key], value)) {
-        return;
-      }
-      target[key] = value;
-    });
-  }
-  remainingKeys.forEach((key) => {
-    delete target[key];
-  });
 }
 
 interface ReactiveRerenderRef<T> {

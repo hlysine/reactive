@@ -79,6 +79,22 @@ export function invokeUntracked<T extends (...args: any[]) => any>(
   return ret;
 }
 
+export function assignDiff(target: Record<any, any>, source: Record<any, any>) {
+  let remainingKeys = Object.keys(target);
+  if (source !== null && source !== undefined && typeof source === 'object') {
+    Object.entries(source).forEach(([key, value]) => {
+      remainingKeys = remainingKeys.filter((k) => k !== key);
+      if (key in target && Object.is(target[key], value)) {
+        return;
+      }
+      target[key] = value;
+    });
+  }
+  remainingKeys.forEach((key) => {
+    delete target[key];
+  });
+}
+
 const WRAP_KEY = '__current__';
 
 export type WrappedRef<T> = T & { [WRAP_KEY]: T };
@@ -159,9 +175,9 @@ export function createWrappedRef<T>(ref: T): WrappedRef<T> {
   });
 }
 
-export function updateWrappedRef<T, U>(
+export function updateWrappedRef<T, U extends T>(
   ref: WrappedRef<T>,
-  newVal: U extends T ? U : never
+  newVal: U
 ) {
   ref[WRAP_KEY] = newVal;
 }

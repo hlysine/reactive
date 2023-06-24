@@ -93,7 +93,7 @@ export const useCustomRef = <T>(factory: CustomRefFactory<T>): Ref<T> => {
  *
  * Shallow version of {@link useReactive()}.
  *
- * Unlike {@link useRective()}, there is no deep conversion: only root-level
+ * Unlike {@link useReactive()}, there is no deep conversion: only root-level
  * properties are reactive for a shallow reactive object. Property values are
  * stored and exposed as-is - this also means properties with ref values will
  * not be automatically unwrapped.

@@ -266,6 +266,9 @@ export const useReadonly = <T extends object>(
   return reactiveRef.current;
 };
 
+/**
+ * A function that cleans up the current side effect.
+ */
 type CleanupFn = () => void;
 
 /**
@@ -381,10 +384,16 @@ export const useWatchEffect = (
 // reference: https://github.com/vuejs/core/blob/020851e57d9a9f727c6ea07e9c1575430af02b73/packages/runtime-core/src/apiWatch.ts
 // ========================================
 
+/**
+ * Reactive sources that can be watched by {@link watch()} or {@link useWatch()}.
+ */
 export type WatchSource<T = any> = Ref<T> | ComputedRef<T> | (() => T);
 
 type MultiWatchSources = (WatchSource<unknown> | object)[];
 
+/**
+ * Values of the watched sources, may be undefined if the callback is triggered by an immediate watch.
+ */
 type MapSources<T, Immediate> = {
   [K in keyof T]: T[K] extends WatchSource<infer V>
     ? Immediate extends true
@@ -397,17 +406,38 @@ type MapSources<T, Immediate> = {
     : never;
 };
 
+/**
+ * A callback function to be executed when a watch is triggered.
+ * This function receives the new and old value of the watch values and may return a clean up function.
+ */
 export type WatchCallback<V = any, OV = any> = (
   value: V,
   oldValue: OV
 ) => CleanupFn | void;
 
-export interface WatchOptions<Immediate = boolean> extends DebuggerOptions {
+export interface UseWatchOptions<Immediate = boolean> extends DebuggerOptions {
+  /**
+   * Trigger the callback immediately on watcher creation. Old value will be undefined on the first call.
+   */
   immediate?: Immediate;
+  /**
+   * Force deep traversal of the source if it is an object, so that the callback fires on deep mutations.
+   * See [Deep Watchers](https://vuejs.org/guide/essentials/watchers.html#deep-watchers).
+   */
   deep?: boolean;
+}
+
+export interface WatchOptions<Immediate = boolean>
+  extends UseWatchOptions<Immediate> {
+  /**
+   * Runs a callback when the watch is being destroyed.
+   */
   onStop?: () => void;
 }
 
+/**
+ * Execute this function to stop the associated watch.
+ */
 export type WatchStopHandle = () => void;
 
 interface WatchOverloads {
@@ -557,11 +587,6 @@ export const watch: WatchOverloads = <
 
   return () => effect.effect.stop();
 };
-
-export interface UseWatchOptions<Immediate = boolean> extends DebuggerOptions {
-  immediate?: Immediate;
-  deep?: boolean;
-}
 
 interface UseWatchOverloads {
   // overload: array of multiple sources + cb

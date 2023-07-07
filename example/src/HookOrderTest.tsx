@@ -25,7 +25,7 @@ export default makeReactive(function App() {
   useWatch(count3, (val) => console.log('useWatch count3:', val));
   return (
     <div>
-      {count.value} -&gt; {count2.value}
+      {count.value} -&gt; {count2.value} -&gt; {count3.value}
       <br></br>
       <button onClick={() => count.value++}>Test update</button>
     </div>

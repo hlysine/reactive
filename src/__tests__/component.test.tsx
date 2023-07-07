@@ -517,8 +517,7 @@ describe('makeReactive', () => {
     expect(mockEffect2).toBeCalledTimes(1);
     expect(mockCleanup2).toBeCalledTimes(0);
     expect(mockGetter).toBeCalledTimes(2);
-    const content1 = await findByText('1');
-    expect(content1).toBeTruthy();
+    expect(await findByText('1')).toBeTruthy();
 
     act(() => {
       count.value++;
@@ -529,8 +528,7 @@ describe('makeReactive', () => {
     expect(mockEffect2).toBeCalledTimes(2);
     expect(mockCleanup2).toBeCalledTimes(1);
     expect(mockGetter).toBeCalledTimes(3);
-    const content2 = await findByText('2');
-    expect(content2).toBeTruthy();
+    expect(await findByText('2')).toBeTruthy();
 
     unmount();
 
@@ -587,7 +585,7 @@ describe('makeReactive', () => {
     expect(mockCleanup).toBeCalledTimes(1);
     expect(mockEffect2).toBeCalledTimes(2);
     expect(mockCleanup2).toBeCalledTimes(1);
-    expect(mockGetter).toBeCalledTimes(3);
+    expect(mockGetter).toBeCalledTimes(4);
     const content1 = await findByText('1');
     expect(content1).toBeTruthy();
 
@@ -599,7 +597,7 @@ describe('makeReactive', () => {
     expect(mockCleanup).toBeCalledTimes(2);
     expect(mockEffect2).toBeCalledTimes(3);
     expect(mockCleanup2).toBeCalledTimes(2);
-    expect(mockGetter).toBeCalledTimes(4);
+    expect(mockGetter).toBeCalledTimes(5);
     const content2 = await findByText('2');
     expect(content2).toBeTruthy();
 
@@ -609,7 +607,7 @@ describe('makeReactive', () => {
     expect(mockCleanup).toBeCalledTimes(3);
     expect(mockEffect2).toBeCalledTimes(3);
     expect(mockCleanup2).toBeCalledTimes(3);
-    expect(mockGetter).toBeCalledTimes(4);
+    expect(mockGetter).toBeCalledTimes(5);
 
     act(() => {
       count.value++;
@@ -619,7 +617,7 @@ describe('makeReactive', () => {
     expect(mockCleanup).toBeCalledTimes(3);
     expect(mockEffect2).toBeCalledTimes(3);
     expect(mockCleanup2).toBeCalledTimes(3);
-    expect(mockGetter).toBeCalledTimes(4);
+    expect(mockGetter).toBeCalledTimes(5);
   });
   it('does not trigger infinite re-renders', async () => {
     // use orginal return value to restore React development mode

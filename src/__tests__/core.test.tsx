@@ -116,7 +116,7 @@ describe('useComputed', () => {
       expect(result.current.value).toBe(2);
     });
 
-    expect(getter).toBeCalledTimes(2);
+    expect(getter).toBeCalledTimes(3);
     expect(setter).toBeCalledTimes(1);
   });
   it('works with writable computed ref (Strict Mode)', () => {
@@ -148,7 +148,7 @@ describe('useComputed', () => {
       expect(result.current.value).toBe(2);
     });
 
-    expect(getter).toBeCalledTimes(2);
+    expect(getter).toBeCalledTimes(4);
     expect(setter).toBeCalledTimes(1);
   });
   it('keeps the same instance across re-render', () => {
@@ -199,19 +199,19 @@ describe('useComputed', () => {
     const { result, rerender, unmount } = renderHook(() => useComputed(getter));
 
     expect(result.current.value).toBe(1);
-    expect(getter).toBeCalledTimes(1);
+    expect(getter).toBeCalledTimes(2);
 
     rerender();
 
     expect(result.current.value).toBe(1);
-    expect(getter).toBeCalledTimes(1);
+    expect(getter).toBeCalledTimes(2);
 
     act(() => {
       count.value++;
     });
 
     expect(result.current.value).toBe(2);
-    expect(getter).toBeCalledTimes(2);
+    expect(getter).toBeCalledTimes(3);
 
     unmount();
     act(() => {
@@ -219,7 +219,7 @@ describe('useComputed', () => {
     });
 
     expect(result.current.value).toBe(2);
-    expect(getter).toBeCalledTimes(2);
+    expect(getter).toBeCalledTimes(3);
   });
   it('is reactive (Strict Mode)', () => {
     // enable React development mode
@@ -237,19 +237,19 @@ describe('useComputed', () => {
     );
 
     expect(result.current.value).toBe(1);
-    expect(getter).toBeCalledTimes(1);
+    expect(getter).toBeCalledTimes(3);
 
     rerender();
 
     expect(result.current.value).toBe(1);
-    expect(getter).toBeCalledTimes(1);
+    expect(getter).toBeCalledTimes(3);
 
     act(() => {
       count.value++;
     });
 
     expect(result.current.value).toBe(2);
-    expect(getter).toBeCalledTimes(2);
+    expect(getter).toBeCalledTimes(4);
 
     unmount();
     act(() => {
@@ -257,7 +257,7 @@ describe('useComputed', () => {
     });
 
     expect(result.current.value).toBe(2);
-    expect(getter).toBeCalledTimes(2);
+    expect(getter).toBeCalledTimes(4);
   });
   it('triggers reactive effects with makeReactive', async () => {
     const mockEffect = jest.fn();

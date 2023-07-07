@@ -11,15 +11,14 @@ import {
   WritableComputedOptions,
   WritableComputedRef,
   computed,
-  getCurrentScope,
   effect as internalEffect,
   isReactive,
   isRef,
   isShallow,
-  onScopeDispose,
   reactive,
   readonly,
   ref,
+  triggerRef,
 } from '@vue/reactivity';
 import {
   WrappedRef,
@@ -69,6 +68,12 @@ export const useReference = <T>(
   useDebugValue(reactiveRef.current, (ref) => ref.value);
   return reactiveRef.current;
 };
+
+interface ComputedRefData<T> {
+  ref: WrappedRef<ComputedRef<T> | WritableComputedRef<T>> | null;
+  oldRef: (ComputedRef<T> | WritableComputedRef<T>)[];
+  stopFlagged: boolean;
+}
 
 interface UseComputed {
   <T>(
@@ -127,35 +132,49 @@ export const useComputed: UseComputed = (<T>(
   optionsOrGetter: ComputedGetter<T> | WritableComputedOptions<T>,
   debugOptions?: DebuggerOptions
 ): ComputedRef<T> | WritableComputedRef<T> => {
-  const reactiveRef = useRef<WrappedRef<
-    ComputedRef<T> | WritableComputedRef<T>
-  > | null>(null);
-  const destroyRef = () => {
-    if (reactiveRef.current !== null) {
-      reactiveRef.current.effect.stop();
+  const reactiveRef = useRef<ComputedRefData<T>>({
+    ref: null,
+    oldRef: [],
+    stopFlagged: false,
+  });
+  const destroyRef = (
+    ref: WrappedRef<ComputedRef<T> | WritableComputedRef<T>> | null
+  ) => {
+    reactiveRef.current.stopFlagged = false;
+    if (ref !== null) {
+      ref.effect.stop();
+      reactiveRef.current.oldRef.push(ref.__current__);
     }
   };
   const initializeRef = (inRender: boolean) => {
+    if (reactiveRef.current.stopFlagged) {
+      destroyRef(reactiveRef.current.ref);
+    }
     if (
-      reactiveRef.current === null ||
-      !reactiveRef.current.__current__.effect.active
+      reactiveRef.current.ref === null ||
+      !reactiveRef.current.ref.__current__.effect.active
     ) {
       const computedRef = computed(
         optionsOrGetter as ComputedGetter<T>,
         debugOptions
       );
-      if (reactiveRef.current === null) {
-        reactiveRef.current = createWrappedRef(computedRef);
+      if (reactiveRef.current.ref === null) {
+        reactiveRef.current.ref = createWrappedRef(computedRef);
       } else {
-        updateWrappedRef(reactiveRef.current, computedRef);
+        updateWrappedRef(reactiveRef.current.ref, computedRef);
       }
-      if (
-        getCurrentScope() === undefined &&
-        inRender &&
-        getFiberInDev() !== null
-      ) {
+      if (reactiveRef.current.oldRef) {
+        const oldRefs = reactiveRef.current.oldRef;
+        for (let i = 0; i < oldRefs.length; i++) {
+          triggerRef(oldRefs[i]);
+        }
+        reactiveRef.current.oldRef.length = 0;
+      }
+      if (inRender && getFiberInDev() !== null) {
+        reactiveRef.current.stopFlagged = true;
         setTimeout(() => {
-          destroyRef();
+          if (reactiveRef.current.stopFlagged)
+            destroyRef(reactiveRef.current.ref);
         }, 0);
       }
     }
@@ -163,13 +182,14 @@ export const useComputed: UseComputed = (<T>(
   initializeRef(true);
   useEffect(() => {
     initializeRef(false);
+    const ref = reactiveRef.current.ref;
     return () => {
-      destroyRef();
+      destroyRef(ref);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  useDebugValue(reactiveRef.current!, (ref) => ref.value);
-  return reactiveRef.current!;
+  useDebugValue(reactiveRef.current.ref!, (ref) => ref.value);
+  return reactiveRef.current.ref!;
 }) as UseComputed;
 
 /**
@@ -362,11 +382,6 @@ export const useWatchEffect = (
         return;
       }
       reactiveRef.current = effect(fn, { ...options, lazy: false });
-      if (getCurrentScope() !== undefined) {
-        onScopeDispose(() => {
-          reactiveRef.current = null;
-        });
-      }
     }
   };
   initializeRef(true);
@@ -680,11 +695,6 @@ export const useWatch: UseWatchOverloads = <
         ...options,
         lazy: false,
       } as WatchOptions<Immediate>);
-      if (getCurrentScope() !== undefined) {
-        onScopeDispose(() => {
-          reactiveRef.current = null;
-        });
-      }
     }
   };
   initializeRef(true);

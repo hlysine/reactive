@@ -12,6 +12,13 @@ const messages = {
         'Use watch if you want to control the execution timing of the effect.'
     );
   },
+  warnLazyAsyncWatch() {
+    console.warn(
+      'The "lazy" option is not supported for useAsyncWatch because the effect has to be run to collect dependencies. ' +
+        'Use the "immediate" option if you want to invoke callback immediately. ' +
+        'Use asyncWatch if you want to control the execution timing of the effect.'
+    );
+  },
   warnInvalidWatchSource(s: unknown) {
     console.warn(
       'Invalid watch source: ',

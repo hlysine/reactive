@@ -463,12 +463,12 @@ export const useWatchEffect = useEffect;
  */
 export type WatchSource<T = any> = Ref<T> | ComputedRef<T> | (() => T);
 
-type MultiWatchSources = (WatchSource<unknown> | object)[];
+export type MultiWatchSources = (WatchSource<unknown> | object)[];
 
 /**
  * Values of the watched sources, may be undefined if the callback is triggered by an immediate watch.
  */
-type MapSources<T, Immediate> = {
+export type MapSources<T, Immediate> = {
   [K in keyof T]: T[K] extends WatchSource<infer V>
     ? Immediate extends true
       ? V | undefined

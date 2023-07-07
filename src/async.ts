@@ -6,9 +6,9 @@ import {
   WatchSource,
   WatchOptions,
   watch,
-} from 'core';
-import { getFiberInDev } from 'helper';
-import messages from 'messages';
+} from './core';
+import { getFiberInDev } from './helper';
+import messages from './messages';
 import {
   useDebugValue,
   useRef as useRefReact,

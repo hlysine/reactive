@@ -30,7 +30,11 @@ import {
   traverse,
   updateWrappedRef,
 } from './helper';
-import { useDebugValue, useEffect, useRef } from 'react';
+import {
+  useDebugValue,
+  useEffect as useEffectReact,
+  useRef as useRefReact,
+} from 'react';
 import messages from './messages';
 
 export { ref, computed, reactive, readonly } from '@vue/reactivity';
@@ -50,16 +54,14 @@ export { ref, computed, reactive, readonly } from '@vue/reactivity';
  * @example
  * ```js
  * // Inside a function component:
- * const count = useReference(1)
+ * const count = useRef(1)
  * ```
  *
  * @param initialValue - The object to wrap in the ref, or a function that returns the object.
  * @see {@link https://vuejs.org/api/reactivity-core.html#ref}
  */
-export const useReference = <T>(
-  initialValue: T | (() => T)
-): Ref<UnwrapRef<T>> => {
-  const reactiveRef = useRef<Ref<UnwrapRef<T>> | null>(null);
+export const useRef = <T>(initialValue: T | (() => T)): Ref<UnwrapRef<T>> => {
+  const reactiveRef = useRefReact<Ref<UnwrapRef<T>> | null>(null);
   if (reactiveRef.current === null) {
     reactiveRef.current = ref(
       isFunction(initialValue) ? invokeUntracked(initialValue) : initialValue
@@ -68,6 +70,29 @@ export const useReference = <T>(
   useDebugValue(reactiveRef.current, (ref) => ref.value);
   return reactiveRef.current;
 };
+
+/**
+ * The hook version of `ref` from `@vue/reactivity`.
+ * In addition to values accepted by `ref`, you can also pass an initializer function returning the value.
+ *
+ * This hook version allows the ref to be created when the component first renders, then cached for future re-renders.
+ * If you pass in an initializer function, it will only be called on first render.
+ *
+ * -----------------------------
+ *
+ * Takes an inner value and returns a reactive and mutable ref object, which
+ * has a single property `.value` that points to the inner value.
+ *
+ * @example
+ * ```js
+ * // Inside a function component:
+ * const count = useRef(1)
+ * ```
+ *
+ * @param initialValue - The object to wrap in the ref, or a function that returns the object.
+ * @see {@link https://vuejs.org/api/reactivity-core.html#ref}
+ */
+export const useReference = useRef;
 
 interface ComputedRefData<T> {
   ref: WrappedRef<ComputedRef<T> | WritableComputedRef<T>> | null;
@@ -101,7 +126,7 @@ interface UseComputed {
  * ```js
  * // Inside a function component:
  * //   Creating a readonly computed ref:
- * const count = useReference(1)
+ * const count = useRef(1)
  * const plusOne = useComputed(() => count.value + 1)
  *
  * console.log(plusOne.value) // 2
@@ -112,7 +137,7 @@ interface UseComputed {
  * ```js
  * // Inside a function component:
  * //   Creating a writable computed ref:
- * const count = useReference(1)
+ * const count = useRef(1)
  * const plusOne = useComputed({
  *   get: () => count.value + 1,
  *   set: (val) => {
@@ -132,7 +157,7 @@ export const useComputed: UseComputed = (<T>(
   optionsOrGetter: ComputedGetter<T> | WritableComputedOptions<T>,
   debugOptions?: DebuggerOptions
 ): ComputedRef<T> | WritableComputedRef<T> => {
-  const reactiveRef = useRef<ComputedRefData<T>>({
+  const reactiveRef = useRefReact<ComputedRefData<T>>({
     ref: null,
     oldRef: [],
     stopFlagged: false,
@@ -180,7 +205,7 @@ export const useComputed: UseComputed = (<T>(
     }
   };
   initializeRef(true);
-  useEffect(() => {
+  useEffectReact(() => {
     initializeRef(false);
     const ref = reactiveRef.current.ref;
     return () => {
@@ -224,7 +249,7 @@ export const useComputed: UseComputed = (<T>(
 export const useReactive = <T extends object>(
   initialValue: T | (() => T)
 ): UnwrapNestedRefs<T> => {
-  const reactiveRef = useRef<UnwrapNestedRefs<T> | null>(null);
+  const reactiveRef = useRefReact<UnwrapNestedRefs<T> | null>(null);
   if (reactiveRef.current === null) {
     reactiveRef.current = reactive(
       isFunction(initialValue) ? invokeUntracked(initialValue) : initialValue
@@ -258,7 +283,7 @@ export const useReactive = <T extends object>(
  *
  * const copy = useReadonly(original)
  *
- * useWatchEffect(() => {
+ * useEffect(() => {
  *   // works for reactivity tracking
  *   console.log(copy.count)
  * })
@@ -276,7 +301,9 @@ export const useReactive = <T extends object>(
 export const useReadonly = <T extends object>(
   initialValue: T | (() => T)
 ): DeepReadonly<UnwrapNestedRefs<T>> => {
-  const reactiveRef = useRef<DeepReadonly<UnwrapNestedRefs<T>> | null>(null);
+  const reactiveRef = useRefReact<DeepReadonly<UnwrapNestedRefs<T>> | null>(
+    null
+  );
   if (reactiveRef.current === null) {
     reactiveRef.current = readonly(
       isFunction(initialValue) ? invokeUntracked(initialValue) : initialValue
@@ -351,8 +378,8 @@ export const effect = (
  * @example
  * ```js
  * // Inside a function component:
- * const count = useReference(0)
- * useWatchEffect(() => {
+ * const count = useRef(0)
+ * useEffect(() => {
  *   console.log(count.value)
  *   return () => console.log('cleanup')
  * })
@@ -362,14 +389,14 @@ export const effect = (
  * @param fn - The function that will track reactive updates. The return value from this function will be used as a cleanup function.
  * @param options - Allows to control the effect's behaviour.
  */
-export const useWatchEffect = (
+export const useEffect = (
   fn: () => CleanupFn | void,
   options?: DebuggerOptions
 ): void => {
   if (options && 'lazy' in options && options.lazy) {
-    messages.warnLazyWatchEffect();
+    messages.warnLazyEffect();
   }
-  const reactiveRef = useRef<ReactiveEffectRunner | null>(null);
+  const reactiveRef = useRefReact<ReactiveEffectRunner | null>(null);
   const destroyRef = () => {
     if (reactiveRef.current !== null) {
       reactiveRef.current.effect.stop();
@@ -385,7 +412,7 @@ export const useWatchEffect = (
     }
   };
   initializeRef(true);
-  useEffect(() => {
+  useEffectReact(() => {
     initializeRef(false);
     return () => {
       destroyRef();
@@ -393,6 +420,38 @@ export const useWatchEffect = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 };
+
+/**
+ * The hook version of `effect` from `@vue/reactivity`.
+ *
+ * This hook version allows the effect to be set up when the component first renders, then automatically stopped
+ * when the component unmounts.
+ *
+ * You may return a cleanup function from the given function to clean up side effects before the given function re-runs.
+ * Note that this syntax follows that of `useEffect` from React, and is not the same as `watchEffect` from Vue.
+ *
+ * -----------------------------
+ *
+ * Registers the given function to track reactive updates.
+ *
+ * The given function will be run once immediately. Every time any reactive
+ * property that's accessed within it gets updated, the function will run again.
+ *
+ * @example
+ * ```js
+ * // Inside a function component:
+ * const count = useRef(0)
+ * useEffect(() => {
+ *   console.log(count.value)
+ *   return () => console.log('cleanup')
+ * })
+ * count.value++
+ * ```
+ *
+ * @param fn - The function that will track reactive updates. The return value from this function will be used as a cleanup function.
+ * @param options - Allows to control the effect's behaviour.
+ */
+export const useWatchEffect = useEffect;
 
 // ========================================
 // watch implementation
@@ -651,7 +710,7 @@ interface UseWatchOverloads {
  * @example
  * ```js
  * // Inside a function component:
- * const count = useReference(0)
+ * const count = useRef(0)
  * useWatch(count, (count) => {
  *   console.log(count)
  *   return () => console.log('cleanup')
@@ -679,7 +738,7 @@ export const useWatch: UseWatchOverloads = <
   if (options && 'lazy' in options && options.lazy) {
     messages.warnLazyWatch();
   }
-  const reactiveRef = useRef<WatchStopHandle | null>(null);
+  const reactiveRef = useRefReact<WatchStopHandle | null>(null);
   const destroyRef = () => {
     if (reactiveRef.current !== null) {
       reactiveRef.current();
@@ -698,7 +757,7 @@ export const useWatch: UseWatchOverloads = <
     }
   };
   initializeRef(true);
-  useEffect(() => {
+  useEffectReact(() => {
     initializeRef(false);
     return () => {
       destroyRef();

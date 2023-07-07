@@ -12,9 +12,9 @@ import {
   useComputed,
   useReactive,
   useReactiveRerender,
-  useReference,
+  useRef,
   useWatch,
-  useWatchEffect,
+  useEffect,
 } from '..';
 import { perf, wait } from 'react-performance-testing';
 import 'jest-performance-testing';
@@ -62,7 +62,7 @@ describe('useReactiveRerender', () => {
     const mockEffect = jest.fn();
     const Tester = function Tester(props: { a: number }) {
       props = useReactiveRerender(props);
-      useWatchEffect(() => {
+      useEffect(() => {
         mockEffect(props.a);
       });
       return <p>{props.a}</p>;
@@ -232,7 +232,7 @@ describe('makeReactive', () => {
   it('updates props', async () => {
     const mockEffect = jest.fn();
     const Tester = makeReactive(function Tester(props: { value?: string }) {
-      useWatchEffect(() => {
+      useEffect(() => {
         mockEffect(props.value);
       });
       return <p>{props.value}</p>;
@@ -371,7 +371,7 @@ describe('makeReactive', () => {
     const mockEffect = jest.fn();
 
     const Tester = makeReactive(function Tester() {
-      useWatchEffect(() => {
+      useEffect(() => {
         mockEffect(obj.b);
       });
       return <p>{obj.a}</p>;
@@ -427,7 +427,7 @@ describe('makeReactive', () => {
     const mockCleanup2 = jest.fn();
     const mockGetter = jest.fn(() => count.value + 1);
     const Tester = makeReactive(function Tester() {
-      useWatchEffect(() => {
+      useEffect(() => {
         mockEffect(count.value);
         return mockCleanup;
       });
@@ -494,7 +494,7 @@ describe('makeReactive', () => {
     const mockCleanup2 = jest.fn();
     const mockGetter = jest.fn(() => count.value + 1);
     const Tester = makeReactive(function Tester() {
-      useWatchEffect(() => {
+      useEffect(() => {
         mockEffect(count.value);
         return mockCleanup;
       });
@@ -559,7 +559,7 @@ describe('makeReactive', () => {
     const mockCleanup2 = jest.fn();
     const mockGetter = jest.fn(() => count.value + 1);
     const Tester = makeReactive(function Tester() {
-      useWatchEffect(() => {
+      useEffect(() => {
         mockEffect(count.value);
         return mockCleanup;
       });
@@ -625,8 +625,9 @@ describe('makeReactive', () => {
 
     const Tester = makeReactive(function Tester() {
       const [, setTick] = useState(0);
-      const count = useReference(0);
-      useWatchEffect(() => {
+      const count = useRef(0);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      useEffect(() => {
         setTick((t) => t + 1);
       });
       useWatch(

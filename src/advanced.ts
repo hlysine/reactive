@@ -29,7 +29,7 @@ export {
  *
  * -----------------------------
  *
- * Shallow version of {@link useReference()}.
+ * Shallow version of {@link useRef()}.
  *
  * @example
  * ```js

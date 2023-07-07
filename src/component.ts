@@ -34,7 +34,7 @@ interface ReactiveRerenderRef<T> {
  * This hook converts data in React's reactivity system to reactive data that is compatible with the rest of this
  * library. You should use other hooks to create reactive data from source if possible, but if not, you can use this
  * hook to convert the data. A typical use case is to pass values from `useState` hooks or React contexts into this
- * function so that reactive effects, such as `useWatchEffect`, can react to data changes from those hooks. You can also
+ * function so that reactive effects, such as `useEffect`, can react to data changes from those hooks. You can also
  * use this hook to create reactive props if the component is not already wrapped with `makeReactive`.
  *
  * @example
@@ -45,7 +45,7 @@ interface ReactiveRerenderRef<T> {
  * const [count, setCount] = useState(0);
  * const state = useReactiveRerender({ count });
  *
- * useWatchEffect(() => {
+ * useEffect(() => {
  *   console.log(state.count); // executes whenever count changes
  * });
  * ```

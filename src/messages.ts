@@ -1,8 +1,8 @@
 const messages = {
-  warnLazyWatchEffect() {
+  warnLazyEffect() {
     console.warn(
-      '"lazy" option is not supported for useWatchEffect because the effect has to be run to collect dependencies. ' +
-        'Use watchEffect if you want to control the execution timing of the effect.'
+      '"lazy" option is not supported for useEffect because the effect has to be run to collect dependencies. ' +
+        'Use effect if you want to control the execution timing of the effect.'
     );
   },
   warnLazyWatch() {

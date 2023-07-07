@@ -1,10 +1,5 @@
 import React, { useEffect } from 'react';
-import {
-  makeReactive,
-  useComputed,
-  useReference,
-  useWatch,
-} from '@hlysine/reactive';
+import { makeReactive, useComputed, useRef, useWatch } from '@hlysine/reactive';
 
 export default makeReactive(function App() {
   useEffect(() => {
@@ -13,7 +8,7 @@ export default makeReactive(function App() {
   }, []);
   console.log('App render');
 
-  const count = useReference(0);
+  const count = useRef(0);
   const count2 = useComputed(() => {
     console.log('useComputed triggered for count2');
     return count.value + 1;

@@ -22,22 +22,42 @@ export interface AsyncReturn<TResult, TError, P extends any[]> {
   execute: (...args: P) => void;
 }
 
+export interface AsyncOptions {
+  overlap?: 'first' | 'last';
+}
+
 export const async = <TResult, TError = any, P extends any[] = []>(
-  func: (...args: P) => Promise<TResult>
+  func: (...args: P) => Promise<TResult>,
+  options: AsyncOptions = {}
 ): AsyncReturn<TResult, TError, P> => {
+  const { overlap = 'last' } = options;
+
   const loading = ref(false);
+  let taskId = 0;
   const error: Ref<TError | undefined> = ref(undefined);
   const result: Ref<TResult | undefined> = ref(undefined);
 
   const execute = (...args: P) => {
     (async () => {
+      if (overlap === 'first' && loading.value) return;
+      taskId++;
+      const currentId = taskId;
       loading.value = true;
       try {
-        result.value = await func(...args);
+        const res = await func(...args);
+        if (currentId === taskId) {
+          result.value = res;
+          error.value = undefined;
+        }
       } catch (ex: any) {
-        error.value = ex;
+        if (currentId === taskId) {
+          result.value = undefined;
+          error.value = ex;
+        }
       } finally {
-        loading.value = false;
+        if (currentId === taskId) {
+          loading.value = false;
+        }
       }
     })();
   };
@@ -51,11 +71,12 @@ export const async = <TResult, TError = any, P extends any[] = []>(
 };
 
 export const useAsync = <TResult, TError = any, P extends any[] = []>(
-  func: (...args: P) => Promise<TResult>
+  func: (...args: P) => Promise<TResult>,
+  options?: AsyncOptions
 ) => {
   const reactiveRef = useRefReact<AsyncReturn<TResult, TError, P> | null>(null);
   if (reactiveRef.current === null) {
-    reactiveRef.current = async(func);
+    reactiveRef.current = async(func, options);
   }
   useDebugValue(reactiveRef.current);
   return reactiveRef.current;
@@ -77,6 +98,10 @@ export interface AsyncWatchReturn<TResult, TError> {
   stop: WatchStopHandle;
 }
 
+export interface AsyncWatchOptions<Immediate>
+  extends WatchOptions<Immediate>,
+    AsyncOptions {}
+
 interface AsyncWatchOverloads {
   // overload: array of multiple sources + cb
   <
@@ -91,7 +116,7 @@ interface AsyncWatchOverloads {
       MapSources<T, false>,
       MapSources<T, Immediate>
     >,
-    options?: WatchOptions<Immediate>
+    options?: AsyncWatchOptions<Immediate>
   ): AsyncWatchReturn<TResult, TError>;
   // overload: multiple sources w/ `as const`
   // watch([foo, bar] as const, () => {})
@@ -108,7 +133,7 @@ interface AsyncWatchOverloads {
       MapSources<T, false>,
       MapSources<T, Immediate>
     >,
-    options?: WatchOptions<Immediate>
+    options?: AsyncWatchOptions<Immediate>
   ): AsyncWatchReturn<TResult, TError>;
   // overload: single source + cb
   <TResult, TError = any, T = any, Immediate extends Readonly<boolean> = true>(
@@ -118,7 +143,7 @@ interface AsyncWatchOverloads {
       T,
       Immediate extends true ? T | undefined : T
     >,
-    options?: WatchOptions<Immediate>
+    options?: AsyncWatchOptions<Immediate>
   ): AsyncWatchReturn<TResult, TError>;
   // overload: watching reactive object w/ cb
   <
@@ -133,7 +158,7 @@ interface AsyncWatchOverloads {
       T,
       Immediate extends true ? T | undefined : T
     >,
-    options?: WatchOptions<Immediate>
+    options?: AsyncWatchOptions<Immediate>
   ): AsyncWatchReturn<TResult, TError>;
 }
 
@@ -149,13 +174,13 @@ export const asyncWatch: AsyncWatchOverloads = <
     MapSources<T, false>,
     MapSources<T, Immediate>
   >,
-  options?: WatchOptions<Immediate>
+  options?: AsyncWatchOptions<Immediate>
 ): AsyncWatchReturn<TResult, TError> => {
   const { loading, error, result, execute } = async<
     TResult,
     TError,
     Parameters<typeof cb>
-  >(cb);
+  >(cb, options);
   if (!options) {
     options = { immediate: true as any };
   } else if (options.immediate !== false) {
@@ -185,7 +210,7 @@ interface UseAsyncWatchOverloads {
       MapSources<T, false>,
       MapSources<T, Immediate>
     >,
-    options?: WatchOptions<Immediate>
+    options?: AsyncWatchOptions<Immediate>
   ): UseAsyncWatchReturn<TResult, TError>;
   // overload: multiple sources w/ `as const`
   // watch([foo, bar] as const, () => {})
@@ -202,7 +227,7 @@ interface UseAsyncWatchOverloads {
       MapSources<T, false>,
       MapSources<T, Immediate>
     >,
-    options?: WatchOptions<Immediate>
+    options?: AsyncWatchOptions<Immediate>
   ): UseAsyncWatchReturn<TResult, TError>;
   // overload: single source + cb
   <TResult, TError = any, T = any, Immediate extends Readonly<boolean> = true>(
@@ -212,7 +237,7 @@ interface UseAsyncWatchOverloads {
       T,
       Immediate extends true ? T | undefined : T
     >,
-    options?: WatchOptions<Immediate>
+    options?: AsyncWatchOptions<Immediate>
   ): UseAsyncWatchReturn<TResult, TError>;
   // overload: watching reactive object w/ cb
   <
@@ -227,7 +252,7 @@ interface UseAsyncWatchOverloads {
       T,
       Immediate extends true ? T | undefined : T
     >,
-    options?: WatchOptions<Immediate>
+    options?: AsyncWatchOptions<Immediate>
   ): UseAsyncWatchReturn<TResult, TError>;
 }
 
@@ -243,7 +268,7 @@ export const useAsyncWatch: UseAsyncWatchOverloads = <
     MapSources<T, false>,
     MapSources<T, Immediate>
   >,
-  options?: WatchOptions<Immediate>
+  options?: AsyncWatchOptions<Immediate>
 ): UseAsyncWatchReturn<TResult, TError> => {
   if (options && 'lazy' in options && options.lazy) {
     messages.warnLazyAsyncWatch();

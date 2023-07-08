@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.7.1](https://github.com/hlysine/reactive/compare/v0.7.0...v0.7.1) (2023-07-08)
+
+
+### Features
+
+* rename useReference to useRef, useWatchEffect to useEffect and add re-exports for old names ([3f387cf](https://github.com/hlysine/reactive/commit/3f387cfd779e16409fbc118ba2006531094ad5b7))
+
+
+### Bug Fixes
+
+* fix wordings in messages ([ea9cf5e](https://github.com/hlysine/reactive/commit/ea9cf5ec7273c8ebfca5bd777365f67c847f2e15))
+* remove effect scope and increase reliability of useComputed ([5ba05d1](https://github.com/hlysine/reactive/commit/5ba05d1b98fcee91cc3b026bb2b0f5d0bdee74e0))
+
 ## [0.7.0](https://github.com/hlysine/reactive/compare/v0.6.2...v0.7.0) (2023-06-12)
 
 

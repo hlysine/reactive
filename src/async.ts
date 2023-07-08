@@ -15,17 +15,56 @@ import {
   useEffect as useEffectReact,
 } from 'react';
 
+/**
+ * Data and functions returned by the {@link async()} function.
+ */
 export interface AsyncReturn<TResult, TError, P extends any[]> {
+  /**
+   * A reactive ref storing the loading state of {@link async()}. True when there is an unsettled promise running.
+   */
   loading: Ref<boolean>;
+  /**
+   * A reactive ref storing the error from promise rejection. If the promise is resolved successfully, `error` will be
+   * undefined. If the promise is rejected, `error` will be set and `result` will be undefined.
+   */
   error: Ref<TError | undefined>;
+  /**
+   * A reactive ref storing the result from a resolved promise. If the promise is resolved successfully, `result` will
+   * be set and `error` will be undefined. If the promise is rejected, `error` will be set and `result` will be
+   * undefined.
+   */
   result: Ref<TResult | undefined>;
+  /**
+   * Run the provided async function. Note that this function is not awaitable. Use the provided reactive values to
+   * update UI while the async function is running.
+   * @param args Arguments to be passed to the async function.
+   */
   execute: (...args: P) => void;
 }
 
+/**
+ * Options for {@link async()}.
+ */
 export interface AsyncOptions {
+  /**
+   * Specifies the behavior when the async function is executed again while the last promise has not yet been settled.
+   *
+   * `first` ignores the newest execution and only returns results from the first, oldest promise.
+   *
+   * `last` ignores the oldest execution and only returns results from the last, most recent promise.
+   *
+   * No results are ignored if the async function is executed after the last promise has settled.
+   */
   overlap?: 'first' | 'last';
 }
 
+/**
+ * Execute an async function and store its results in reactive values. By watching these reactive values, you will be
+ * notified when the promise settles without having to await the function.
+ * @param func The async function to be executed.
+ * @param options Options for async behavior.
+ * @returns Reactive values and functions to monitor async execution.
+ */
 export const async = <TResult, TError = any, P extends any[] = []>(
   func: (...args: P) => Promise<TResult>,
   options: AsyncOptions = {}
@@ -70,6 +109,17 @@ export const async = <TResult, TError = any, P extends any[] = []>(
   };
 };
 
+/**
+ * The hook version of {@link async()} that memoizes the reactive values across re-renders.
+ *
+ * ----------------------
+ *
+ * Execute an async function and store its results in reactive values. By watching these reactive values, you will be
+ * notified when the promise settles without having to await the function.
+ * @param func The async function to be executed.
+ * @param options Options for async behavior.
+ * @returns Reactive values and functions to monitor async execution.
+ */
 export const useAsync = <TResult, TError = any, P extends any[] = []>(
   func: (...args: P) => Promise<TResult>,
   options?: AsyncOptions
@@ -91,13 +141,34 @@ export type AsyncWatchCallback<T, V = any, OV = any> = (
   oldValue: OV
 ) => Promise<T>;
 
+/**
+ * Data and functions returned by the {@link asyncWatch()} function.
+ */
 export interface AsyncWatchReturn<TResult, TError> {
+  /**
+   * A reactive ref storing the loading state of {@link async()}. True when there is an unsettled promise running.
+   */
   loading: Ref<boolean>;
+  /**
+   * A reactive ref storing the error from promise rejection. If the promise is resolved successfully, `error` will be
+   * undefined. If the promise is rejected, `error` will be set and `result` will be undefined.
+   */
   error: Ref<TError | undefined>;
+  /**
+   * A reactive ref storing the result from a resolved promise. If the promise is resolved successfully, `result` will
+   * be set and `error` will be undefined. If the promise is rejected, `error` will be set and `result` will be
+   * undefined.
+   */
   result: Ref<TResult | undefined>;
+  /**
+   * A function that stops the async watch when called.
+   */
   stop: WatchStopHandle;
 }
 
+/**
+ * Options for {@link asyncWatch()}.
+ */
 export interface AsyncWatchOptions<Immediate>
   extends WatchOptions<Immediate>,
     AsyncOptions {}

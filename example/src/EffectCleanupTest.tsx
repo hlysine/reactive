@@ -6,21 +6,22 @@ import {
   useCustomRef,
   useReactive,
   useReadonly,
-  useReference,
+  useRef,
   useShallowReactive,
   useShallowReadonly,
   useShallowRef,
-  useWatchEffect,
+  useEffect,
 } from '@hlysine/reactive';
 
 const obj = reactive({ a: 1, b: 2 });
 
 const Watcher = makeReactive(function Watcher() {
   const [, setState] = useState(0);
-  useWatchEffect(() => {
-    console.log('watchEffect', obj.a);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    console.log('effect', obj.a);
     setState(obj.a);
-    return () => console.log('cleanup useWatchEffect');
+    return () => console.log('cleanup useEffect');
   });
   console.log('render Watcher');
 
@@ -30,7 +31,7 @@ const Watcher = makeReactive(function Watcher() {
 export default makeReactive(function App() {
   const [show, setShow] = useState(true);
 
-  const count = useReference(0);
+  const count = useRef(0);
   useComputed(() => count.value + 1);
   const obj2 = useReactive({ a: 1 });
   useReadonly(obj2);

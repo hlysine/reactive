@@ -12,9 +12,9 @@ import {
   useComputed,
   useReactive,
   useReactiveRerender,
-  useReference,
+  useRef,
   useWatch,
-  useWatchEffect,
+  useEffect,
 } from '..';
 import { perf, wait } from 'react-performance-testing';
 import 'jest-performance-testing';
@@ -62,7 +62,7 @@ describe('useReactiveRerender', () => {
     const mockEffect = jest.fn();
     const Tester = function Tester(props: { a: number }) {
       props = useReactiveRerender(props);
-      useWatchEffect(() => {
+      useEffect(() => {
         mockEffect(props.a);
       });
       return <p>{props.a}</p>;
@@ -232,7 +232,7 @@ describe('makeReactive', () => {
   it('updates props', async () => {
     const mockEffect = jest.fn();
     const Tester = makeReactive(function Tester(props: { value?: string }) {
-      useWatchEffect(() => {
+      useEffect(() => {
         mockEffect(props.value);
       });
       return <p>{props.value}</p>;
@@ -371,7 +371,7 @@ describe('makeReactive', () => {
     const mockEffect = jest.fn();
 
     const Tester = makeReactive(function Tester() {
-      useWatchEffect(() => {
+      useEffect(() => {
         mockEffect(obj.b);
       });
       return <p>{obj.a}</p>;
@@ -427,7 +427,7 @@ describe('makeReactive', () => {
     const mockCleanup2 = jest.fn();
     const mockGetter = jest.fn(() => count.value + 1);
     const Tester = makeReactive(function Tester() {
-      useWatchEffect(() => {
+      useEffect(() => {
         mockEffect(count.value);
         return mockCleanup;
       });
@@ -494,7 +494,7 @@ describe('makeReactive', () => {
     const mockCleanup2 = jest.fn();
     const mockGetter = jest.fn(() => count.value + 1);
     const Tester = makeReactive(function Tester() {
-      useWatchEffect(() => {
+      useEffect(() => {
         mockEffect(count.value);
         return mockCleanup;
       });
@@ -517,8 +517,7 @@ describe('makeReactive', () => {
     expect(mockEffect2).toBeCalledTimes(1);
     expect(mockCleanup2).toBeCalledTimes(0);
     expect(mockGetter).toBeCalledTimes(2);
-    const content1 = await findByText('1');
-    expect(content1).toBeTruthy();
+    expect(await findByText('1')).toBeTruthy();
 
     act(() => {
       count.value++;
@@ -529,8 +528,7 @@ describe('makeReactive', () => {
     expect(mockEffect2).toBeCalledTimes(2);
     expect(mockCleanup2).toBeCalledTimes(1);
     expect(mockGetter).toBeCalledTimes(3);
-    const content2 = await findByText('2');
-    expect(content2).toBeTruthy();
+    expect(await findByText('2')).toBeTruthy();
 
     unmount();
 
@@ -561,7 +559,7 @@ describe('makeReactive', () => {
     const mockCleanup2 = jest.fn();
     const mockGetter = jest.fn(() => count.value + 1);
     const Tester = makeReactive(function Tester() {
-      useWatchEffect(() => {
+      useEffect(() => {
         mockEffect(count.value);
         return mockCleanup;
       });
@@ -587,7 +585,7 @@ describe('makeReactive', () => {
     expect(mockCleanup).toBeCalledTimes(1);
     expect(mockEffect2).toBeCalledTimes(2);
     expect(mockCleanup2).toBeCalledTimes(1);
-    expect(mockGetter).toBeCalledTimes(3);
+    expect(mockGetter).toBeCalledTimes(4);
     const content1 = await findByText('1');
     expect(content1).toBeTruthy();
 
@@ -599,7 +597,7 @@ describe('makeReactive', () => {
     expect(mockCleanup).toBeCalledTimes(2);
     expect(mockEffect2).toBeCalledTimes(3);
     expect(mockCleanup2).toBeCalledTimes(2);
-    expect(mockGetter).toBeCalledTimes(4);
+    expect(mockGetter).toBeCalledTimes(5);
     const content2 = await findByText('2');
     expect(content2).toBeTruthy();
 
@@ -609,7 +607,7 @@ describe('makeReactive', () => {
     expect(mockCleanup).toBeCalledTimes(3);
     expect(mockEffect2).toBeCalledTimes(3);
     expect(mockCleanup2).toBeCalledTimes(3);
-    expect(mockGetter).toBeCalledTimes(4);
+    expect(mockGetter).toBeCalledTimes(5);
 
     act(() => {
       count.value++;
@@ -619,7 +617,7 @@ describe('makeReactive', () => {
     expect(mockCleanup).toBeCalledTimes(3);
     expect(mockEffect2).toBeCalledTimes(3);
     expect(mockCleanup2).toBeCalledTimes(3);
-    expect(mockGetter).toBeCalledTimes(4);
+    expect(mockGetter).toBeCalledTimes(5);
   });
   it('does not trigger infinite re-renders', async () => {
     // use orginal return value to restore React development mode
@@ -627,8 +625,9 @@ describe('makeReactive', () => {
 
     const Tester = makeReactive(function Tester() {
       const [, setTick] = useState(0);
-      const count = useReference(0);
-      useWatchEffect(() => {
+      const count = useRef(0);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      useEffect(() => {
         setTick((t) => t + 1);
       });
       useWatch(

@@ -1,10 +1,5 @@
 import React, { useEffect } from 'react';
-import {
-  makeReactive,
-  useComputed,
-  useReference,
-  useWatch,
-} from '@hlysine/reactive';
+import { makeReactive, useComputed, useRef, useWatch } from '@hlysine/reactive';
 
 export default makeReactive(function App() {
   useEffect(() => {
@@ -13,7 +8,7 @@ export default makeReactive(function App() {
   }, []);
   console.log('App render');
 
-  const count = useReference(0);
+  const count = useRef(0);
   const count2 = useComputed(() => {
     console.log('useComputed triggered for count2');
     return count.value + 1;
@@ -25,7 +20,7 @@ export default makeReactive(function App() {
   useWatch(count3, (val) => console.log('useWatch count3:', val));
   return (
     <div>
-      {count.value} -&gt; {count2.value}
+      {count.value} -&gt; {count2.value} -&gt; {count3.value}
       <br></br>
       <button onClick={() => count.value++}>Test update</button>
     </div>

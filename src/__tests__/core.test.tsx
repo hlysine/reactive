@@ -10,9 +10,9 @@ import {
   useComputed,
   useReactive,
   useReadonly,
-  useReference,
+  useRef,
   useWatch,
-  useWatchEffect,
+  useEffect,
   watch,
 } from '..';
 import React from 'react';
@@ -34,14 +34,14 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-describe('useReference', () => {
+describe('useRef', () => {
   it('returns a valid ref', () => {
-    const { result } = renderHook(() => useReference(1));
+    const { result } = renderHook(() => useRef(1));
     expect(result.current.value).toBe(1);
     expect(isRef(result.current)).toBe(true);
   });
   it('keeps the same instance across re-render', () => {
-    const { result, rerender } = renderHook(() => useReference(1));
+    const { result, rerender } = renderHook(() => useRef(1));
     const ref = result.current;
 
     rerender();
@@ -50,7 +50,7 @@ describe('useReference', () => {
   });
   it('works with initializer function', () => {
     const initializer = jest.fn(() => ({ count: 1 }));
-    const { result, rerender } = renderHook(() => useReference(initializer));
+    const { result, rerender } = renderHook(() => useRef(initializer));
     const ref = result.current;
     expect(result.current.value.count).toBe(1);
     expect(initializer).toBeCalledTimes(1);
@@ -116,7 +116,7 @@ describe('useComputed', () => {
       expect(result.current.value).toBe(2);
     });
 
-    expect(getter).toBeCalledTimes(2);
+    expect(getter).toBeCalledTimes(3);
     expect(setter).toBeCalledTimes(1);
   });
   it('works with writable computed ref (Strict Mode)', () => {
@@ -148,7 +148,7 @@ describe('useComputed', () => {
       expect(result.current.value).toBe(2);
     });
 
-    expect(getter).toBeCalledTimes(2);
+    expect(getter).toBeCalledTimes(4);
     expect(setter).toBeCalledTimes(1);
   });
   it('keeps the same instance across re-render', () => {
@@ -199,19 +199,19 @@ describe('useComputed', () => {
     const { result, rerender, unmount } = renderHook(() => useComputed(getter));
 
     expect(result.current.value).toBe(1);
-    expect(getter).toBeCalledTimes(1);
+    expect(getter).toBeCalledTimes(2);
 
     rerender();
 
     expect(result.current.value).toBe(1);
-    expect(getter).toBeCalledTimes(1);
+    expect(getter).toBeCalledTimes(2);
 
     act(() => {
       count.value++;
     });
 
     expect(result.current.value).toBe(2);
-    expect(getter).toBeCalledTimes(2);
+    expect(getter).toBeCalledTimes(3);
 
     unmount();
     act(() => {
@@ -219,7 +219,7 @@ describe('useComputed', () => {
     });
 
     expect(result.current.value).toBe(2);
-    expect(getter).toBeCalledTimes(2);
+    expect(getter).toBeCalledTimes(3);
   });
   it('is reactive (Strict Mode)', () => {
     // enable React development mode
@@ -237,19 +237,19 @@ describe('useComputed', () => {
     );
 
     expect(result.current.value).toBe(1);
-    expect(getter).toBeCalledTimes(1);
+    expect(getter).toBeCalledTimes(3);
 
     rerender();
 
     expect(result.current.value).toBe(1);
-    expect(getter).toBeCalledTimes(1);
+    expect(getter).toBeCalledTimes(3);
 
     act(() => {
       count.value++;
     });
 
     expect(result.current.value).toBe(2);
-    expect(getter).toBeCalledTimes(2);
+    expect(getter).toBeCalledTimes(4);
 
     unmount();
     act(() => {
@@ -257,7 +257,7 @@ describe('useComputed', () => {
     });
 
     expect(result.current.value).toBe(2);
-    expect(getter).toBeCalledTimes(2);
+    expect(getter).toBeCalledTimes(4);
   });
   it('triggers reactive effects with makeReactive', async () => {
     const mockEffect = jest.fn();
@@ -470,13 +470,13 @@ describe('effect', () => {
   });
 });
 
-describe('useWatchEffect', () => {
+describe('useEffect', () => {
   it('is reactive', () => {
     const counter = ref(1);
     const effectFn = jest.fn();
 
     const { unmount } = renderHook(() =>
-      useWatchEffect(() => {
+      useEffect(() => {
         effectFn(counter.value);
       })
     );
@@ -501,7 +501,7 @@ describe('useWatchEffect', () => {
     const effectFn = jest.fn();
 
     const { rerender, unmount } = renderHook(() =>
-      useWatchEffect(() => {
+      useEffect(() => {
         effectFn(counter.value);
       })
     );
@@ -525,7 +525,7 @@ describe('useWatchEffect', () => {
     const cleanupFn = jest.fn();
 
     const { unmount } = renderHook(() =>
-      useWatchEffect(() => {
+      useEffect(() => {
         effectFn(counter.value);
         return cleanupFn;
       })
@@ -555,7 +555,7 @@ describe('useWatchEffect', () => {
     const cleanupFn = jest.fn();
 
     const { unmount } = renderHook(() =>
-      useWatchEffect(() => {
+      useEffect(() => {
         effectFn(counter.value);
         return cleanupFn;
       })
@@ -586,7 +586,7 @@ describe('useWatchEffect', () => {
 
     const { unmount } = renderHook(
       () =>
-        useWatchEffect(() => {
+        useEffect(() => {
           effectFn(counter.value);
           return cleanupFn;
         }),
@@ -617,11 +617,12 @@ describe('useWatchEffect', () => {
     const effectFn = jest.fn();
 
     const { unmount } = renderHook(() =>
-      useWatchEffect(
+      useEffect(
         () => {
           effectFn(counter.value);
         },
         // @ts-expect-error - lazy is not a valid option
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         { lazy: true }
       )
     );

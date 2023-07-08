@@ -1,6 +1,4 @@
 import {
-  EffectScope,
-  effectScope,
   ReactiveEffectRunner,
   effect,
   shallowReadonly,
@@ -19,7 +17,7 @@ function destroyReactivityRef(
   reactivityRef: MutableRefObject<ComponentReactivity | null>
 ) {
   if (reactivityRef.current !== null) {
-    reactivityRef.current.scope.stop();
+    reactivityRef.current.effect.effect.stop();
     reactivityRef.current = null;
   }
 }
@@ -36,7 +34,7 @@ interface ReactiveRerenderRef<T> {
  * This hook converts data in React's reactivity system to reactive data that is compatible with the rest of this
  * library. You should use other hooks to create reactive data from source if possible, but if not, you can use this
  * hook to convert the data. A typical use case is to pass values from `useState` hooks or React contexts into this
- * function so that reactive effects, such as `useWatchEffect`, can react to data changes from those hooks. You can also
+ * function so that reactive effects, such as `useEffect`, can react to data changes from those hooks. You can also
  * use this hook to create reactive props if the component is not already wrapped with `makeReactive`.
  *
  * @example
@@ -47,7 +45,7 @@ interface ReactiveRerenderRef<T> {
  * const [count, setCount] = useState(0);
  * const state = useReactiveRerender({ count });
  *
- * useWatchEffect(() => {
+ * useEffect(() => {
  *   console.log(state.count); // executes whenever count changes
  * });
  * ```
@@ -81,7 +79,6 @@ export const useReactiveRerender = <T extends object>(target: T): T => {
 };
 
 interface ComponentReactivity {
-  scope: EffectScope;
   effect: ReactiveEffectRunner;
   props: any;
   ctx: any;
@@ -128,37 +125,33 @@ function useReactivityInternals<P extends {}>(
 
   const initializeRef = (inRender: boolean) => {
     if (reactivityRef.current === null) {
-      const scope = effectScope();
-      scope.run(() => {
-        const runner = effect(
-          function reactiveRender() {
-            if (Array.isArray(reactivityRef.current!.props)) {
-              return (func as (...args: any) => any)(
-                ...reactivityRef.current!.props
-              );
-            } else {
-              return func(
-                reactivityRef.current!.props,
-                reactivityRef.current!.ctx
-              );
-            }
-          },
-          {
-            lazy: true,
-            scheduler: () => {
-              if (!reactivityRef.current!.updatingProps) rerender();
-            },
+      const runner = effect(
+        function reactiveRender() {
+          if (Array.isArray(reactivityRef.current!.props)) {
+            return (func as (...args: any) => any)(
+              ...reactivityRef.current!.props
+            );
+          } else {
+            return func(
+              reactivityRef.current!.props,
+              reactivityRef.current!.ctx
+            );
           }
-        );
-        reactivityRef.current = {
-          scope,
-          effect: runner,
-          props: reactiveProps,
-          ctx: undefined,
-          destroyAfterUse: inRender && getFiberInDev() !== null,
-          updatingProps: false,
-        };
-      });
+        },
+        {
+          lazy: true,
+          scheduler: () => {
+            if (!reactivityRef.current!.updatingProps) rerender();
+          },
+        }
+      );
+      reactivityRef.current = {
+        effect: runner,
+        props: reactiveProps,
+        ctx: undefined,
+        destroyAfterUse: inRender && getFiberInDev() !== null,
+        updatingProps: false,
+      };
       if (!inRender) {
         rerender();
       }
@@ -215,9 +208,7 @@ export const makeReactive = <P extends {}>(
     const reactivityRef = useReactivityInternals(component, props);
 
     reactivityRef.current!.ctx = ctx;
-    const ret = reactivityRef.current!.scope.run(function scopedRender() {
-      return reactivityRef.current!.effect();
-    });
+    const ret = reactivityRef.current!.effect();
     if (reactivityRef.current!.destroyAfterUse) {
       destroyReactivityRef(reactivityRef);
     }
@@ -270,9 +261,7 @@ export const makeReactiveHook = <T extends (...args: any) => any>(
   const useReactiveHook: T = ((...args: any) => {
     const reactivityRef = useReactivityInternals(hook, args);
 
-    const ret = reactivityRef.current!.scope.run(function scopedRender() {
-      return reactivityRef.current!.effect();
-    });
+    const ret = reactivityRef.current!.effect();
     if (reactivityRef.current!.destroyAfterUse) {
       destroyReactivityRef(reactivityRef);
     }
